@@ -137,6 +137,17 @@
     document.write('<style>#adminView{display:none !important;}</style>');
   }
 </script>
+<div id="authGate" style="display:none;position:fixed;inset:0;background:#001B3D;z-index:2000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:32px;max-width:340px;width:90%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3);">
+    <div style="font-size:12px;letter-spacing:.1em;color:#C08A3E;font-weight:700;text-transform:uppercase;margin-bottom:10px;">Staff Access</div>
+    <h2 style="margin:0 0 18px;color:#002856;font-size:20px;">Enter password to continue</h2>
+    <form id="authForm">
+      <input type="password" id="authPwInput" placeholder="Password" autocomplete="off" style="width:100%;padding:12px;border:1px solid #E4E0D6;border-radius:8px;font-size:15px;box-sizing:border-box;margin-bottom:10px;">
+      <div id="authError" style="color:#B4525C;font-size:12.5px;margin-bottom:10px;display:none;">Incorrect password</div>
+      <button type="submit" style="width:100%;background:#002856;color:#fff;border:none;border-radius:8px;padding:12px;font-weight:700;font-size:15px;cursor:pointer;">Unlock</button>
+    </form>
+  </div>
+</div>
 <div class="wrap" id="adminView">
 
   <header>
@@ -360,7 +371,7 @@
         <svg id="selfBarcode" style="margin-top:14px;"></svg>
       </div>
       <p style="font-size:12.5px;color:var(--muted);margin-top:14px;">Please show this barcode when leaving to check out</p>
-      <button class="btn btn-gold" id="selfWhatsAppBtn" style="margin-top:14px;width:100%;">Send Badge via WhatsApp</button>
+      <button class="btn btn-gold" id="selfWhatsAppBtn" style="margin-top:14px;width:100%;">Resend Badge via WhatsApp</button>
       <button class="btn btn-ghost" id="selfAnotherBtn" style="margin-top:10px;width:100%;">Register another visitor</button>
     </div>
   </div>
@@ -370,6 +381,7 @@
 
 <script>
 const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwJbO-yofH_-eDzV2hri5Kkg6coEJBttQSipjtelRy6p8UJNSGESYsNyZvwqFRt3zOABg/exec";
+const SHEET_SECRET_TOKEN = "5eba9cbf798cc05b868781b5a075f36d"; // must match SECRET_TOKEN in the Apps Script code exactly
 
 const STORAGE_KEY = "visitors-log"; // local backup copy only
 let visitors = [];
@@ -440,9 +452,11 @@ function jsonpRequest(url, timeoutMs){
 
 async function loadVisitors(){
   try{
-    const res = await fetch(SHEET_WEBAPP_URL);
+    const res = await fetch(SHEET_WEBAPP_URL + '?token=' + encodeURIComponent(SHEET_SECRET_TOKEN));
     if(!res.ok) throw new Error('HTTP ' + res.status);
-    visitors = await res.json();
+    const data = await res.json();
+    if(data && data.error){ throw new Error(data.error); }
+    visitors = data;
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(visitors)); }catch(e){}
   }catch(e){
     showDiag('Could not connect to Google Sheets: ' + (e && e.message ? e.message : e) + ' - showing last locally saved copy');
@@ -462,7 +476,7 @@ async function saveVisitors(){
       method: 'POST',
       mode: 'no-cors',
       headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body: JSON.stringify(visitors)
+      body: JSON.stringify({ token: SHEET_SECRET_TOKEN, visitors: visitors })
     });
     // In no-cors mode we can't read the response, but the request does reach and execute in Google Sheets
   }catch(e){
@@ -598,7 +612,7 @@ function render(){
 }
 
 function escapeHtml(s){
-  return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  return String(s === undefined || s === null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 document.getElementById('visitorForm').addEventListener('submit', async (e)=>{
@@ -788,9 +802,10 @@ document.getElementById('filterType').addEventListener('change', render);
 
 document.getElementById('exportBtn').addEventListener('click', ()=>{
   if(visitors.length===0){ toast('No data to export'); return; }
-  const headers = ['NAME','number2','NUMBER','NEEDS','NAME OF EMPLOYEE','COMPANY NAME',"REMARK's",'DATE','DAY','TIME','STATUS'];
+  const headers = ['Name','ID Number','Phone','Visit Type','Department / Person','Company','Notes','Check-in Time','Check-out Time'];
   const rows = visitors.map(v=>{
-    const d = new Date(v.checkIn);
+    const checkInStr = v.checkIn ? (new Date(v.checkIn)).toLocaleString('en-US') : '';
+    const checkOutStr = v.checkOut ? (new Date(v.checkOut)).toLocaleString('en-US') : '';
     return [
       v.name,
       v.idNumber,
@@ -799,10 +814,8 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
       v.host,
       v.company,
       v.notes,
-      d.toLocaleDateString('en-US'),
-      d.toLocaleDateString('en-US', {weekday:'long'}),
-      d.toLocaleTimeString('en-US'),
-      v.status==='in' ? 'Inside' : 'Left'
+      checkInStr,
+      checkOutStr
     ];
   });
   const wsData = [headers, ...rows];
@@ -859,6 +872,9 @@ document.getElementById('selfForm')?.addEventListener('submit', async (e)=>{
     JsBarcode('#selfBarcode', record.barcode, {format:"CODE128", width:1.6, height:50, displayValue:true, fontSize:13, margin:4});
   }catch(err){}
   e.target.reset();
+
+  // Send the badge to WhatsApp automatically right after check-in
+  shareBadgeWhatsApp(record.id);
 });
 
 document.getElementById('selfWhatsAppBtn')?.addEventListener('click', ()=>{
@@ -870,8 +886,40 @@ document.getElementById('selfAnotherBtn')?.addEventListener('click', ()=>{
   document.getElementById('selfFormScreen').style.display = 'block';
 });
 
+const ADMIN_PW_HASH = '811c58ddddaf26e71f17fcef44249511c375c843d042fb30c034c9705746e10c';
+
+async function sha256Hex(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function unlockAdmin(){
+  renderSelfLink();
+  loadVisitors();
+}
+
 const _isSelfMode = initMode();
-if(!_isSelfMode){ renderSelfLink(); }
+if(_isSelfMode){
+  loadVisitors(); // self check-in view needs visitor data loaded too, but stays hidden regardless
+} else if(sessionStorage.getItem('adminAuthed') === '1'){
+  unlockAdmin();
+} else {
+  document.getElementById('authGate').style.display = 'flex';
+  document.getElementById('authForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const entered = document.getElementById('authPwInput').value;
+    const hash = await sha256Hex(entered);
+    if(hash === ADMIN_PW_HASH){
+      sessionStorage.setItem('adminAuthed', '1');
+      document.getElementById('authGate').style.display = 'none';
+      unlockAdmin();
+    } else {
+      document.getElementById('authError').style.display = 'block';
+      document.getElementById('authPwInput').value = '';
+      document.getElementById('authPwInput').focus();
+    }
+  });
+}
 function englishOnly(str){
   // Strips Arabic script ranges (letters, presentation forms, diacritics) - keeps everything else (Latin, numbers, symbols, spaces)
   return str.replace(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g, '');
@@ -892,8 +940,6 @@ function enforceEnglishOnly(el){
   const el = document.getElementById(id);
   if(el) enforceEnglishOnly(el);
 });
-
-loadVisitors();
 </script>
 </body>
 </html>
