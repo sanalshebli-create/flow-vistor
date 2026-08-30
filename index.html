@@ -380,7 +380,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyd1FPRC99CslP5-vPuvAB6T8fn8v5IQsb2ghOriH5D7BflzQ5ahOStLqX5WEhufgMn/exec";
+const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyd1FPRC99CslP5-vPuvAB6T8fn8v5IQsb2ghOriH5D7BfIzQ5ahOStLqX5WEhufgMn/exec";
 const SHEET_SECRET_TOKEN = "5eba9cbf798cc05b868781b5a075f36d"; // must match SECRET_TOKEN in the Apps Script code exactly
 
 const STORAGE_KEY = "visitors-log"; // local backup copy only
@@ -452,12 +452,15 @@ function jsonpRequest(url, timeoutMs){
 
 async function loadVisitors(){
   try{
-    const res = await fetch(SHEET_WEBAPP_URL + '?token=' + encodeURIComponent(SHEET_SECRET_TOKEN));
-    if(!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
+    // Google Apps Script web apps do not reliably expose JSON to cross-origin
+    // fetch() from GitHub Pages. Use the JSONP helper already included above.
+    const url = SHEET_WEBAPP_URL + '?token=' + encodeURIComponent(SHEET_SECRET_TOKEN);
+    const data = await jsonpRequest(url, 15000);
     if(data && data.error){ throw new Error(data.error); }
+    if(!Array.isArray(data)){ throw new Error('Unexpected response from Google Sheets'); }
     visitors = data;
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(visitors)); }catch(e){}
+    hideDiag();
   }catch(e){
     showDiag('Could not connect to Google Sheets: ' + (e && e.message ? e.message : e) + ' - showing last locally saved copy');
     try{
@@ -470,17 +473,23 @@ async function loadVisitors(){
 }
 
 async function saveVisitors(){
+  // Always keep a local copy first.
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(visitors)); }catch(e){}
+
   try{
+    // Simple text/plain POST avoids a CORS preflight. Google Apps Script Web Apps
+    // accept this request through doPost(e). We intentionally use no-cors because
+    // the browser is not allowed to read the cross-origin response.
     await fetch(SHEET_WEBAPP_URL, {
       method: 'POST',
       mode: 'no-cors',
+      redirect: 'follow',
       headers: {'Content-Type': 'text/plain;charset=utf-8'},
       body: JSON.stringify({ token: SHEET_SECRET_TOKEN, visitors: visitors })
     });
-    // In no-cors mode we can't read the response, but the request does reach and execute in Google Sheets
+    hideDiag();
   }catch(e){
-    showDiag('Could not save to Google Sheets: ' + (e && e.message ? e.message : e));
+    showDiag('Could not save to Google Sheets: ' + (e && e.message ? e.message : e) + ' - local copy was saved');
   }
 }
 
@@ -493,6 +502,11 @@ function showDiag(msg){
     document.body.prepend(d);
   }
   d.textContent = 'Diagnostic: ' + msg;
+}
+
+function hideDiag(){
+  const d = document.getElementById('diagBox');
+  if(d) d.remove();
 }
 
 const PUBLISHED_URL = 'https://sanalshebli-create.github.io/flow-vistor/';
