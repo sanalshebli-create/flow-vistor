@@ -139,6 +139,8 @@
 </script>
 <div id="authGate" style="display:none;position:fixed;inset:0;background:#001B3D;z-index:2000;align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:16px;padding:32px;max-width:340px;width:90%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3);">
+    <img id="authGateLogo" src="" alt="Flow Medical Solutions logo" style="width:56px;height:56px;border-radius:12px;margin-bottom:10px;">
+    <div style="font-family:'Poppins',sans-serif;font-weight:700;color:#002856;font-size:15px;margin-bottom:14px;">Our valued visitor</div>
     <div style="font-size:12px;letter-spacing:.1em;color:#C08A3E;font-weight:700;text-transform:uppercase;margin-bottom:10px;">Staff Access</div>
     <h2 style="margin:0 0 18px;color:#002856;font-size:20px;">Enter password to continue</h2>
     <form id="authForm">
@@ -353,7 +355,8 @@
           <label>Your Company <span class="req">*</span></label>
           <input type="text" id="sfCompany" required placeholder="Company name">
         </div>
-        <button type="submit" class="btn btn-primary">Check In</button>
+        <button type="submit" class="btn btn-primary" id="selfSubmitBtn" disabled>Connecting…</button>
+        <div id="selfConnectNote" style="text-align:center;font-size:12px;color:var(--muted);margin-top:8px;">Connecting to the visitor system…</div>
       </form>
     </div>
     <div id="selfSuccessScreen" style="display:none;text-align:center;">
@@ -450,12 +453,12 @@ function jsonpRequest(url, timeoutMs){
   });
 }
 
-async function loadVisitors(){
+async function loadVisitors(timeoutMs){
   try{
     // Google Apps Script web apps do not reliably expose JSON to cross-origin
     // fetch() from GitHub Pages. Use the JSONP helper already included above.
     const url = SHEET_WEBAPP_URL + '?token=' + encodeURIComponent(SHEET_SECRET_TOKEN);
-    const data = await jsonpRequest(url, 15000);
+    const data = await jsonpRequest(url, timeoutMs || 15000);
     if(data && data.error){ throw new Error(data.error); }
     if(!Array.isArray(data)){ throw new Error('Unexpected response from Google Sheets'); }
     visitors = data;
@@ -690,6 +693,8 @@ function generateBarcodeValue(){
 }
 
 const LOGO_DATA_URI = "data:image/png;base64,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";
+document.getElementById('authGateLogo').src = LOGO_DATA_URI;
+document.getElementById('selfLogoImg').src = LOGO_DATA_URI;
 
 window.printBadge = function(id){
   const v = visitors.find(x=>x.id===id);
@@ -842,7 +847,7 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
 
 document.getElementById('selfForm')?.addEventListener('submit', async (e)=>{
   e.preventDefault();
-  if(!loaded){ toast('Please wait a moment then try again'); return; }
+  if(!loaded){ toast('Still connecting, please try again in a few seconds'); return; }
   const name = document.getElementById('sfName').value.trim();
   const idNumber = document.getElementById('sfId').value.trim();
   const phone = document.getElementById('sfPhone').value.trim();
@@ -912,9 +917,28 @@ function unlockAdmin(){
   loadVisitors();
 }
 
+// Self check-in kiosks must never leave the visitor stuck on "please wait" -
+// this connects in the background, shows clear status, retries once on
+// failure, and always unlocks the Check In button once it's done trying.
+async function initSelfConnection(){
+  const btn = document.getElementById('selfSubmitBtn');
+  const note = document.getElementById('selfConnectNote');
+  await loadVisitors(8000);
+  if(!loaded || document.getElementById('diagBox')){
+    if(note) note.textContent = 'First attempt failed, retrying…';
+    await loadVisitors(8000);
+  }
+  if(btn){ btn.disabled = false; btn.textContent = 'Check In'; }
+  if(note){
+    note.textContent = document.getElementById('diagBox')
+      ? 'Connection is slow, but you can still check in now.'
+      : '';
+  }
+}
+
 const _isSelfMode = initMode();
 if(_isSelfMode){
-  loadVisitors(); // self check-in view needs visitor data loaded too, but stays hidden regardless
+  initSelfConnection(); // self check-in view needs visitor data loaded too, but stays hidden regardless
 } else if(sessionStorage.getItem('adminAuthed') === '1'){
   unlockAdmin();
 } else {
