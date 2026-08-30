@@ -365,13 +365,13 @@
       <div id="selfBadgeCard" style="border:2px solid #002856;border-radius:14px;padding:22px;text-align:center;">
         <img src="" id="selfBadgeLogo" alt="Flow Medical Solutions logo" style="width:44px;height:44px;border-radius:9px;margin-bottom:6px;">
         <div style="font-size:12px;font-weight:800;color:#002856;letter-spacing:.03em;">FLOW MEDICAL SOLUTIONS</div>
-        <div style="font-size:9px;letter-spacing:.1em;color:#C08A3E;font-weight:700;text-transform:uppercase;margin-bottom:12px;">Visitor Badge</div>
+        <div style="font-size:9px;letter-spacing:.1em;color:#C08A3E;font-weight:700;text-transform:uppercase;margin-bottom:12px;">Visitor Badge &middot; Self Check-In</div>
         <div style="font-size:26px;font-weight:900;color:#D32F2F;letter-spacing:.06em;text-transform:uppercase;border:3px solid #D32F2F;border-radius:8px;padding:5px 10px;display:inline-block;margin:4px 0 14px;">VISITOR</div>
         <h3 id="selfBadgeName" style="margin:0 0 12px;color:#002856;font-size:19px;"></h3>
         <div style="text-align:left;font-size:13px;margin:5px 0;color:#222;"><b style="color:#002856;">Visit Type:</b> <span id="selfBadgeType"></span></div>
         <div style="text-align:left;font-size:13px;margin:5px 0;color:#222;"><b style="color:#002856;">Visiting:</b> <span id="selfBadgeHost"></span></div>
         <div style="text-align:left;font-size:13px;margin:5px 0;color:#222;"><b style="color:#002856;">Check-in:</b> <span id="selfBadgeDate"></span></div>
-        <svg id="selfBarcode" style="margin-top:14px;"></svg>
+        <svg id="selfBarcode" style="margin-top:14px;max-width:100%;height:auto;"></svg>
       </div>
       <p style="font-size:12.5px;color:var(--muted);margin-top:14px;">Please show this barcode when leaving to check out</p>
       <button class="btn btn-gold" id="selfWhatsAppBtn" style="margin-top:14px;width:100%;">Resend Badge via WhatsApp</button>
@@ -700,28 +700,30 @@ window.printBadge = function(id){
   const v = visitors.find(x=>x.id===id);
   if(!v) return;
   const canvas = document.createElement('canvas');
-  JsBarcode(canvas, v.barcode, {format:"CODE128", displayValue:true, fontSize:14, height:50, margin:6});
+  JsBarcode(canvas, v.barcode, {format:"CODE128", displayValue:true, fontSize:20, fontOptions:"bold", width:3, height:100, margin:10});
   const dataUrl = canvas.toDataURL('image/png');
-  const w = window.open('', '_blank', 'width=420,height=620');
+  const w = window.open('', '_blank', 'width=900,height=1100');
   if(!w){ toast('Please allow pop-ups to print'); return; }
   w.document.write(`<!DOCTYPE html><html dir="ltr" lang="en"><head><meta charset="utf-8"><title>Visitor Badge</title>
     <style>
-      body{font-family:Tahoma,Arial,sans-serif;text-align:center;padding:30px;margin:0;}
-      .badge{border:2px solid #002856;border-radius:14px;padding:24px;max-width:300px;margin:0 auto;}
-      .logo{width:48px;height:48px;border-radius:9px;margin-bottom:8px;}
-      .company{font-size:13px;font-weight:800;color:#002856;letter-spacing:.03em;margin-bottom:2px;}
-      .company-sub{font-size:9px;letter-spacing:.1em;color:#C08A3E;font-weight:700;text-transform:uppercase;margin-bottom:14px;}
-      .visitor-stamp{font-size:30px;font-weight:900;color:#D32F2F;letter-spacing:.06em;text-transform:uppercase;border:3px solid #D32F2F;border-radius:8px;padding:6px 10px;display:inline-block;margin:6px 0 16px;transform:rotate(-2deg);}
-      h2{margin:0 0 14px;color:#002856;font-size:20px;}
-      .row{text-align:left;font-size:13px;margin:6px 0;color:#222;}
+      @page{ size:A4; margin:20mm; }
+      html,body{height:100%;}
+      body{font-family:Tahoma,Arial,sans-serif;text-align:center;margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;}
+      .badge{border:3px solid #002856;border-radius:18px;padding:40px;max-width:420px;width:100%;margin:0 auto;}
+      .logo{width:68px;height:68px;border-radius:14px;margin-bottom:12px;}
+      .company{font-size:16px;font-weight:800;color:#002856;letter-spacing:.03em;margin-bottom:3px;}
+      .company-sub{font-size:11px;letter-spacing:.1em;color:#C08A3E;font-weight:700;text-transform:uppercase;margin-bottom:18px;}
+      .visitor-stamp{font-size:36px;font-weight:900;color:#D32F2F;letter-spacing:.06em;text-transform:uppercase;border:3px solid #D32F2F;border-radius:10px;padding:8px 14px;display:inline-block;margin:8px 0 20px;transform:rotate(-2deg);}
+      h2{margin:0 0 18px;color:#002856;font-size:26px;}
+      .row{text-align:left;font-size:15px;margin:8px 0;color:#222;}
       .row b{color:#002856;}
-      img.barcode-img{margin-top:16px;max-width:100%;}
+      img.barcode-img{margin-top:22px;max-width:100%;}
     </style></head>
     <body>
       <div class="badge">
         <img class="logo" src="${LOGO_DATA_URI}" alt="Flow Medical Solutions logo">
         <div class="company">FLOW MEDICAL SOLUTIONS</div>
-        <div class="company-sub">Visitor Badge</div>
+        <div class="company-sub">Visitor Badge${v.selfRegistered ? ' &middot; Self Check-In' : ''}</div>
         <div class="visitor-stamp">VISITOR</div>
         <h2>${escapeHtml(v.name)}</h2>
         <div class="row"><b>Company:</b> ${escapeHtml(v.company||'—')}</div>
@@ -742,7 +744,7 @@ function buildBadgeElement(v, barcodeDataUrl){
     <div style="border:2px solid #002856;border-radius:14px;padding:24px;">
       <img src="${LOGO_DATA_URI}" alt="logo" style="width:48px;height:48px;border-radius:9px;margin-bottom:8px;">
       <div style="font-size:13px;font-weight:800;color:#002856;letter-spacing:.03em;margin-bottom:2px;">FLOW MEDICAL SOLUTIONS</div>
-      <div style="font-size:9px;letter-spacing:.1em;color:#C08A3E;font-weight:700;text-transform:uppercase;margin-bottom:14px;">Visitor Badge</div>
+      <div style="font-size:9px;letter-spacing:.1em;color:#C08A3E;font-weight:700;text-transform:uppercase;margin-bottom:14px;">Visitor Badge${v.selfRegistered ? ' &middot; Self Check-In' : ''}</div>
       <div style="font-size:30px;font-weight:900;color:#D32F2F;letter-spacing:.06em;text-transform:uppercase;border:3px solid #D32F2F;border-radius:8px;padding:6px 10px;display:inline-block;margin:6px 0 16px;">VISITOR</div>
       <h2 style="margin:0 0 14px;color:#002856;font-size:20px;">${escapeHtml(v.name)}</h2>
       <div style="text-align:left;font-size:13px;margin:6px 0;color:#222;"><b style="color:#002856;">Company:</b> ${escapeHtml(v.company||'—')}</div>
@@ -759,8 +761,15 @@ window.shareBadgeWhatsApp = async function(id){
   const v = visitors.find(x=>x.id===id);
   if(!v) return;
 
+  // Open the WhatsApp tab synchronously, right on the click, before any
+  // async image work — most browsers block window.open() once you're a
+  // few "awaits" deep into a click handler, which is why this used to
+  // silently do nothing on some phones/browsers.
+  const shareText = `Visitor Badge - ${v.name} - ${v.type}`;
+  const waWin = window.open('', '_blank');
+
   const barcodeCanvas = document.createElement('canvas');
-  JsBarcode(barcodeCanvas, v.barcode, {format:"CODE128", displayValue:true, fontSize:14, height:50, margin:6});
+  JsBarcode(barcodeCanvas, v.barcode, {format:"CODE128", displayValue:true, fontSize:16, fontOptions:"bold", width:2.4, height:80, margin:8});
   const barcodeDataUrl = barcodeCanvas.toDataURL('image/png');
 
   const holder = document.createElement('div');
@@ -774,11 +783,15 @@ window.shareBadgeWhatsApp = async function(id){
     document.body.removeChild(holder);
 
     canvas.toBlob(async (blob) => {
-      if(!blob){ toast('Could not generate badge image'); return; }
+      if(!blob){
+        toast('Could not generate badge image');
+        if(waWin) waWin.close();
+        return;
+      }
       const file = new File([blob], `visitor-badge-${v.name.replace(/\s+/g,'-')}.png`, {type:'image/png'});
-      const shareText = `Visitor Badge - ${v.name} - ${v.type}`;
 
       if(navigator.canShare && navigator.canShare({files:[file]})){
+        if(waWin) waWin.close(); // native share sheet replaces the WhatsApp tab
         try{
           await navigator.share({files:[file], title:'Visitor Badge', text:shareText});
           return;
@@ -788,7 +801,8 @@ window.shareBadgeWhatsApp = async function(id){
       }
 
       // Fallback: no native file-sharing support (e.g. desktop Chrome) -
-      // download the image and open WhatsApp Web with a prefilled text message.
+      // download the image and point the already-open tab at WhatsApp
+      // with a prefilled text message.
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -796,10 +810,12 @@ window.shareBadgeWhatsApp = async function(id){
       a.click();
       URL.revokeObjectURL(url);
       toast('Badge image downloaded - attach it in the WhatsApp chat that opens');
-      window.open('https://wa.me/?text=' + encodeURIComponent(shareText), '_blank');
+      const waUrl = 'https://wa.me/?text=' + encodeURIComponent(shareText);
+      if(waWin){ waWin.location.href = waUrl; } else { window.open(waUrl, '_blank'); }
     }, 'image/png');
   }catch(err){
     if(holder.parentNode) document.body.removeChild(holder);
+    if(waWin) waWin.close();
     toast('Could not create badge image for sharing');
   }
 };
@@ -888,7 +904,7 @@ document.getElementById('selfForm')?.addEventListener('submit', async (e)=>{
   document.getElementById('selfBadgeHost').textContent = record.host;
   document.getElementById('selfBadgeDate').textContent = fmtDate(record.checkIn) + ' - ' + fmtTime(record.checkIn);
   try{
-    JsBarcode('#selfBarcode', record.barcode, {format:"CODE128", width:1.6, height:50, displayValue:true, fontSize:13, margin:4});
+    JsBarcode('#selfBarcode', record.barcode, {format:"CODE128", width:2.6, height:90, displayValue:true, fontSize:18, fontOptions:"bold", margin:8});
   }catch(err){}
   e.target.reset();
 
