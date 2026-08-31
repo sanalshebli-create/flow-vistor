@@ -118,7 +118,8 @@
   #qrcodeBox{flex-shrink:0;line-height:0;padding:8px;background:#fff;border:1px solid var(--line);border-radius:10px;}
   .self-link-info{flex:1;min-width:220px;}
   .self-link-info p{margin:0 0 10px;font-size:13.5px;color:var(--muted);}
-  .link-copy{display:flex;gap:8px;}
+  .link-copy{display:flex;gap:8px;flex-wrap:wrap;}
+  .link-copy input{min-width:160px;}
   .link-copy input{flex:1;font-size:12.5px;color:var(--muted);}
   .self-tag{font-size:10px;background:var(--gold-soft);color:#8A5E1E;padding:2px 7px;border-radius:10px;font-weight:700;vertical-align:middle;margin-left:4px;}
 
@@ -127,7 +128,7 @@
   .self-title{text-align:center;font-size:21px;margin:6px 0 22px;color:var(--ink-deep);}
   .success-check{width:56px;height:56px;border-radius:50%;background:var(--green-soft);color:var(--green);font-size:26px;display:flex;align-items:center;justify-content:center;margin:0 auto;font-weight:800;}
 
-  .cta-self-btn{display:block;width:100%;background:var(--gold);color:#2A1D0A;border:none;border-radius:10px;padding:16px;font-family:'Poppins',sans-serif;font-weight:800;font-size:16px;cursor:pointer;margin:18px 0;box-shadow:0 4px 14px rgba(192,138,62,.35);}
+  .cta-self-btn{display:none;width:100%;background:var(--gold);color:#2A1D0A;border:none;border-radius:10px;padding:16px;font-family:'Poppins',sans-serif;font-weight:800;font-size:16px;cursor:pointer;margin:18px 0;box-shadow:0 4px 14px rgba(192,138,62,.35);}
   .cta-self-btn:hover{filter:brightness(1.05);}
 </style>
 </head>
@@ -194,6 +195,7 @@
         <div class="link-copy">
           <input type="text" id="selfLinkText" readonly>
           <button class="btn btn-ghost btn-sm" id="copyLinkBtn">Copy link</button>
+          <button class="btn btn-gold btn-sm" id="printQrBtn">Print QR (A4)</button>
         </div>
       </div>
     </div>
@@ -539,6 +541,57 @@ function renderSelfLink(){
     new QRCode(qrBox, {text:url, width:130, height:130, colorDark:"#001B3D", colorLight:"#ffffff", correctLevel: QRCode.CorrectLevel.M});
   }
 }
+
+function printSelfQr(){
+  const url = PUBLISHED_URL + '?self=1';
+  if(!window.QRCode){ toast('QR code library did not load - check your connection'); return; }
+
+  // Render a large, high-resolution QR code offscreen so it stays crisp on A4.
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:fixed;left:-9999px;top:0;';
+  document.body.appendChild(holder);
+  new QRCode(holder, {text:url, width:520, height:520, colorDark:"#001B3D", colorLight:"#ffffff", correctLevel: QRCode.CorrectLevel.M});
+
+  let qrDataUrl = '';
+  const canvasEl = holder.querySelector('canvas');
+  const imgEl = holder.querySelector('img');
+  if(canvasEl){ qrDataUrl = canvasEl.toDataURL('image/png'); }
+  else if(imgEl){ qrDataUrl = imgEl.src; }
+  document.body.removeChild(holder);
+
+  if(!qrDataUrl){ toast('Could not generate the QR code for printing'); return; }
+
+  const w = window.open('', '_blank', 'width=900,height=1100');
+  if(!w){ toast('Please allow pop-ups to print'); return; }
+  w.document.write(`<!DOCTYPE html><html dir="ltr" lang="en"><head><meta charset="utf-8"><title>Visitor Self Check-In QR</title>
+    <style>
+      @page{ size:A4; margin:20mm; }
+      html,body{height:100%;}
+      body{font-family:Tahoma,Arial,sans-serif;text-align:center;margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;}
+      .sheet{max-width:480px;width:100%;}
+      .logo{width:76px;height:76px;border-radius:16px;margin-bottom:14px;}
+      .company{font-size:18px;font-weight:800;color:#002856;letter-spacing:.03em;margin-bottom:4px;}
+      .company-sub{font-size:12px;letter-spacing:.1em;color:#C08A3E;font-weight:700;text-transform:uppercase;margin-bottom:26px;}
+      h1{margin:0 0 26px;color:#002856;font-size:30px;}
+      .qr-frame{border:3px solid #002856;border-radius:20px;padding:28px;display:inline-block;}
+      .qr-frame img{width:400px;height:400px;display:block;}
+      .instructions{margin-top:26px;font-size:15px;color:#333;line-height:1.5;}
+    </style></head>
+    <body>
+      <div class="sheet">
+        <img class="logo" src="${LOGO_DATA_URI}" alt="Flow Medical Solutions logo">
+        <div class="company">FLOW MEDICAL SOLUTIONS</div>
+        <div class="company-sub">Visitor Reception</div>
+        <h1>Self Check-In</h1>
+        <div class="qr-frame"><img src="${qrDataUrl}" alt="Self check-in QR code"></div>
+        <p class="instructions">Scan this code with your phone camera to check yourself in as a visitor.</p>
+      </div>
+      <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 300); };<\/script>
+    </body></html>`);
+  w.document.close();
+}
+
+document.getElementById('printQrBtn')?.addEventListener('click', printSelfQr);
 
 document.getElementById('copyLinkBtn')?.addEventListener('click', async ()=>{
   const val = document.getElementById('selfLinkText').value;
