@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flow Medical Solutions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.12.3/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --ink:#002856;
+    --ink-deep:#001B3D;
+    --paper:#FFFFFF;
+    --card:#FFFFFF;
+    --line:#E4E0D6;
+    --muted:#6B756F;
+    --gold:#C08A3E;
+    --gold-soft:#F3E4C8;
+    --green:#3F7D5C;
+    --green-soft:#E4F0E8;
+    --gray-soft:#EDEBE4;
+    --danger:#B4525C;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink-deep);font-family:'Inter',sans-serif;}
+  h1,h2,h3,.num{font-family:'Poppins',sans-serif;}
+  ::selection{background:var(--gold-soft);}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px;}
+
+  /* header */
+  header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px;border-bottom:2px solid var(--ink);padding-bottom:18px;}
+  .brand-row{display:flex;align-items:center;gap:14px;}
+  .brand-logo{width:52px;height:52px;border-radius:10px;object-fit:cover;flex-shrink:0;}
+  .brand-eyebrow{font-size:12px;letter-spacing:.08em;color:var(--gold);font-weight:700;text-transform:uppercase;margin-bottom:4px;}
+    header h1{margin:0;font-size:28px;font-weight:800;color:var(--ink-deep);}
+  .clock{text-align:right;font-family:'Poppins',sans-serif;}
+  .clock .time{font-size:22px;font-weight:700;color:var(--ink);}
+  .clock .date{font-size:13px;color:var(--muted);}
+
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:26px;}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden;}
+  .stat .label{font-size:13px;color:var(--muted);margin-bottom:6px;}
+  .stat .num{font-size:30px;font-weight:800;color:var(--ink-deep);}
+  .stat.live{background:var(--ink-deep);border-color:var(--ink-deep);}
+  .stat.live .label{color:#BFD3CD;}
+  .stat.live .num{color:#fff;display:flex;align-items:center;gap:10px;}
+  .pulse{width:10px;height:10px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 0 rgba(192,138,62,.6);animation:pulse 1.8s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(192,138,62,.55);}70%{box-shadow:0 0 0 9px rgba(192,138,62,0);}100%{box-shadow:0 0 0 0 rgba(192,138,62,0);}}
+
+  /* layout */
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;}
+  @media (max-width:860px){.grid{grid-template-columns:1fr;} .stats{grid-template-columns:1fr 1fr;}}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;}
+  .card h2{font-size:16px;margin:0 0 16px;font-weight:700;color:var(--ink-deep);display:flex;align-items:center;gap:8px;}
+  .card h2::before{content:"";width:4px;height:16px;background:var(--gold);border-radius:2px;display:inline-block;}
+
+  label{display:block;font-size:12.5px;color:var(--muted);margin:0 0 5px;font-weight:500;}
+  .field{margin-bottom:13px;}
+  input,select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-family:'Inter',sans-serif;font-size:14px;background:#FCFBF9;color:var(--ink-deep);}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--gold);outline-offset:1px;border-color:var(--gold);}
+  textarea{resize:vertical;min-height:50px;}
+
+  .btn{border:none;border-radius:8px;padding:10px 16px;font-family:'Inter',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:filter .15s;}
+  .btn:hover{filter:brightness(1.08);}
+  .btn:active{filter:brightness(.95);}
+  .btn-primary{background:var(--ink-deep);color:#fff;width:100%;padding:12px;font-size:15px;}
+  .btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--line);}
+  .btn-sm{padding:6px 10px;font-size:12.5px;border-radius:6px;}
+  .btn-gold{background:var(--gold);color:#2A1D0A;}
+  .btn-danger-outline{background:transparent;color:var(--danger);border:1px solid #E7C6CA;}
+
+  .req{color:var(--danger);}
+
+  /* table area */
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+  .toolbar input[type=text]{flex:1;min-width:160px;}
+  .toolbar select{width:auto;min-width:130px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  thead th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;padding:0 10px 10px;border-bottom:1px solid var(--line);}
+  tbody td{padding:11px 10px;border-bottom:1px solid #EFEDE6;vertical-align:middle;}
+  tbody tr:hover{background:#FBFAF7;}
+  .visitor-name{font-weight:700;color:var(--ink-deep);}
+  .visitor-sub{font-size:12px;color:var(--muted);}
+
+  .tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap;}
+  .status{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;}
+  .dot{width:7px;height:7px;border-radius:50%;}
+  .dot.in{background:var(--green);}
+  .dot.out{background:#A7ADA9;}
+
+  .empty{text-align:center;padding:50px 10px;color:var(--muted);}
+  .empty .big{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+
+  .row-actions{display:flex;gap:6px;justify-content:flex-end;}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink-deep);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:all .25s;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:50;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .footer-note{margin-top:24px;font-size:12px;color:var(--muted);text-align:center;}
+  .loading{padding:60px;text-align:center;color:var(--muted);}
+
+  .barcode-svg{max-height:32px;}
+  .scan-bar{display:flex;align-items:center;gap:10px;background:var(--ink-deep);border-radius:10px;padding:10px 14px;margin-bottom:16px;}
+  .scan-bar .ic{font-size:18px;}
+  .scan-bar input{background:#20423C;border:1px solid #2E5A52;color:#fff;}
+  .scan-bar input::placeholder{color:#9FB7B0;}
+  .scan-bar label{color:#BFD3CD;margin:0;white-space:nowrap;font-size:12.5px;}
+
+  .self-link-row{display:flex;gap:22px;align-items:center;flex-wrap:wrap;}
+  #qrcodeBox{flex-shrink:0;line-height:0;padding:8px;background:#fff;border:1px solid var(--line);border-radius:10px;}
+  .self-link-info{flex:1;min-width:220px;}
+  .self-link-info p{margin:0 0 10px;font-size:13.5px;color:var(--muted);}
+  .link-copy{display:flex;gap:8px;flex-wrap:wrap;}
+  .link-copy input{min-width:160px;}
+  .link-copy input{flex:1;font-size:12.5px;color:var(--muted);}
+  .self-tag{font-size:10px;background:var(--gold-soft);color:#8A5E1E;padding:2px 7px;border-radius:10px;font-weight:700;vertical-align:middle;margin-left:4px;}
+
+  .self-wrap{max-width:440px;margin:50px auto;padding:0 20px;}
+  .self-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:30px;box-shadow:0 10px 30px rgba(0,0,0,.06);}
+  .self-title{text-align:center;font-size:21px;margin:6px 0 22px;color:var(--ink-deep);}
+  .success-check{width:56px;height:56px;border-radius:50%;background:var(--green-soft);color:var(--green);font-size:26px;display:flex;align-items:center;justify-content:center;margin:0 auto;font-weight:800;}
+
+  .cta-self-btn{display:none;width:100%;background:var(--gold);color:#2A1D0A;border:none;border-radius:10px;padding:16px;font-family:'Poppins',sans-serif;font-weight:800;font-size:16px;cursor:pointer;margin:18px 0;box-shadow:0 4px 14px rgba(192,138,62,.35);}
+  .cta-self-btn:hover{filter:brightness(1.05);}
+</style>
+</head>
+<body>
+<script>
+  const _qp = new URLSearchParams(location.search);
+  if(_qp.get('self') === '1' || _qp.get('checkout') === '1'){
+    document.write('<style>#adminView{display:none !important;}</style>');
+  }
+</script>
+<div id="authGate" style="display:none;position:fixed;inset:0;background:#001B3D;z-index:2000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:32px;max-width:340px;width:90%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3);">
+    <img id="authGateLogo" src="" alt="Flow Medical Solutions logo" style="width:56px;height:56px;border-radius:12px;margin-bottom:10px;">
+    <div style="font-family:'Poppins',sans-serif;font-weight:700;color:#002856;font-size:15px;margin-bottom:14px;">Our valued visitor</div>
+    <div style="font-size:12px;letter-spacing:.1em;color:#C08A3E;font-weight:700;text-transform:uppercase;margin-bottom:10px;">Staff Access</div>
+    <h2 style="margin:0 0 18px;color:#002856;font-size:20px;">Enter password to continue</h2>
+    <form id="authForm">
+      <input type="password" id="authPwInput" placeholder="Password" autocomplete="off" style="width:100%;padding:12px;border:1px solid #E4E0D6;border-radius:8px;font-size:15px;box-sizing:border-box;margin-bottom:10px;">
+      <div id="authError" style="color:#B4525C;font-size:12.5px;margin-bottom:10px;display:none;">Incorrect password</div>
+      <button type="submit" style="width:100%;background:#002856;color:#fff;border:none;border-radius:8px;padding:12px;font-weight:700;font-size:15px;cursor:pointer;">Unlock</button>
+    </form>
+  </div>
+</div>
+<div class="wrap" id="adminView">
+
+  <header>
+    <div class="brand-row">
+      <img src="data:image/png;base64,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" alt="Flow Medical Solutions logo" class="brand-logo">
+      <div>
+        <div class="brand-eyebrow">Reception &middot; Check-in &amp; Check-out System</div>
+        <h1>Flow Medical Solutions</h1>
+      </div>
+    </div>
+    <div class="clock">
+      <div class="time" id="clockTime">--:--</div>
+      <div class="date" id="clockDate">--</div>
+    </div>
+  </header>
+
+  <button class="cta-self-btn" id="ctaSelfBtn" onclick="showSelfView()">
+    New visitor? Tap here to check yourself in
+  </button>
+
+  <div class="stats">
+    <div class="stat live">
+      <div class="label">Inside the building now</div>
+      <div class="num"><span class="pulse"></span><span id="statInside">0</span></div>
+    </div>
+    <div class="stat">
+      <div class="label">Visitors today</div>
+      <div class="num" id="statToday">0</div>
+    </div>
+    <div class="stat">
+      <div class="label">Total this month</div>
+      <div class="num" id="statMonth">0</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:20px;">
+    <h2>Self check-in via visitor's phone</h2>
+    <div class="self-link-row">
+      <div id="qrcodeBox"></div>
+      <div class="self-link-info">
+        <p>Print this QR code and place it at the reception desk. When a visitor scans it with their phone, this page opens directly to the self check-in form so they can enter their own details, and their check-in appears instantly in the log below.</p>
+        <div class="link-copy">
+          <input type="text" id="selfLinkText" readonly>
+          <button class="btn btn-ghost btn-sm" id="copyLinkBtn">Copy link</button>
+          <button class="btn btn-gold btn-sm" id="printQrBtn">Print QR (A4)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- Registration form -->
+    <div class="card">
+      <h2>Register New Visitor</h2>
+      <form id="visitorForm">
+        <div class="field">
+          <label>Full Name <span class="req">*</span></label>
+          <input type="text" id="fName" required placeholder="e.g. John Smith">
+        </div>
+        <div class="field">
+          <label>ID / Iqama Number <span class="req">*</span></label>
+          <input type="text" id="fId" required placeholder="e.g. 1234567890">
+        </div>
+        <div class="field">
+          <label>Phone Number <span class="req">*</span></label>
+          <input type="tel" id="fPhone" required placeholder="05xxxxxxxx">
+        </div>
+        <div class="field">
+          <label>Visit Type <span class="req">*</span></label>
+          <select id="fType" required>
+            <option value="">Select type</option>
+            <option>Business Meeting</option>
+            <option>Meeting</option>
+            <option>Administrative Review</option>
+            <option>Delivery / Maintenance</option>
+            <option>Contractor / Technician</option>
+            <option>Personal Visit</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Department to Visit <span class="req">*</span></label>
+          <select id="fDept" required>
+            <option value="">Select department</option>
+            <option>APE</option>
+            <option>PM</option>
+            <option>TO</option>
+            <option>MES</option>
+            <option>PE</option>
+            <option>GRC</option>
+            <option>Sales &amp; Marketing</option>
+            <option>CEO</option>
+            <option>CX</option>
+            <option>Shared Services</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Name of Person You Are Visiting <span class="req">*</span></label>
+          <input type="text" id="fHostName" required placeholder="e.g. Ms. Sarah">
+        </div>
+        <div class="field">
+          <label>Visitor's Company <span class="req">*</span></label>
+          <input type="text" id="fCompany" required placeholder="Company name">
+        </div>
+        <div class="field">
+          <label>Notes <span class="req">*</span></label>
+          <textarea id="fNotes" required placeholder="Any additional details"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Check In Visitor</button>
+      </form>
+    </div>
+
+    <!-- Table -->
+    <div class="card">
+      <h2>Visit Log</h2>
+      <div class="scan-bar">
+        <span class="ic">▤</span>
+        <label for="scanBox">Quick barcode checkout:</label>
+        <input type="text" id="scanBox" placeholder="Scan visitor badge barcode here, then press Enter" autocomplete="off">
+      </div>
+      <div class="toolbar">
+        <input type="text" id="searchBox" placeholder="Search by name or department...">
+        <select id="filterStatus">
+          <option value="all">All statuses</option>
+          <option value="in">Inside</option>
+          <option value="out">Left</option>
+        </select>
+        <select id="filterType">
+          <option value="all">All types</option>
+          <option>Business Meeting</option>
+          <option>Meeting</option>
+          <option>Administrative Review</option>
+          <option>Delivery / Maintenance</option>
+          <option>Contractor / Technician</option>
+          <option>Personal Visit</option>
+          <option>Other</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" id="exportBtn">Export Excel</button>
+      </div>
+      <div id="tableWrap">
+        <div class="loading">Loading log...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">Data is shared across all users of this app and saved automatically.</div>
+</div>
+
+<div class="self-wrap" id="selfView" style="display:none">
+  <div class="self-card">
+      <div style="text-align:center;margin-bottom:10px;">
+        <img src="data:image/png;base64,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" id="selfLogoImg" alt="Flow Medical Solutions logo" style="width:56px;height:56px;border-radius:12px;">
+      </div>
+    <div id="selfFormScreen">
+      <div class="brand-eyebrow" style="text-align:center">Self Check-In</div>
+      <h1 class="self-title">Welcome — please fill in your details</h1>
+      <form id="selfForm">
+        <div class="field">
+          <label>Full Name <span class="req">*</span></label>
+          <input type="text" id="sfName" required placeholder="Enter your full name">
+        </div>
+        <div class="field">
+          <label>ID / Iqama Number <span class="req">*</span></label>
+          <input type="text" id="sfId" required placeholder="e.g. 1234567890">
+        </div>
+        <div class="field">
+          <label>Phone Number <span class="req">*</span></label>
+          <input type="tel" id="sfPhone" required placeholder="05xxxxxxxx">
+        </div>
+        <div class="field">
+          <label>Reason for Visit <span class="req">*</span></label>
+          <select id="sfType" required>
+            <option value="">Select type</option>
+            <option>Business Meeting</option>
+            <option>Meeting</option>
+            <option>Administrative Review</option>
+            <option>Delivery / Maintenance</option>
+            <option>Contractor / Technician</option>
+            <option>Personal Visit</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Which department are you visiting? <span class="req">*</span></label>
+          <select id="sfDept" required>
+            <option value="">Select department</option>
+            <option>APE</option>
+            <option>PM</option>
+            <option>TO</option>
+            <option>MES</option>
+            <option>PE</option>
+            <option>GRC</option>
+            <option>Sales &amp; Marketing</option>
+            <option>CEO</option>
+            <option>CX</option>
+            <option>Shared Services</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Name of Person You Are Visiting <span class="req">*</span></label>
+          <input type="text" id="sfHostName" required placeholder="e.g. Ms. Sarah">
+        </div>
+        <div class="field">
+          <label>Your Company <span class="req">*</span></label>
+          <input type="text" id="sfCompany" required placeholder="Company name">
+        </div>
+        <button type="submit" class="btn btn-primary" id="selfSubmitBtn" disabled>Connecting…</button>
+        <div id="selfConnectNote" style="text-align:center;font-size:12px;color:var(--muted);margin-top:8px;">Connecting to the visitor system…</div>
+      </form>
+    </div>
+    <div id="selfSuccessScreen" style="display:none;text-align:center;">
+      <div class="success-check">✓</div>
+      <h2 style="margin:14px 0 16px;">You're checked in</h2>
+      <div id="selfBadgeCard" style="border:2px solid #002856;border-radius:14px;padding:22px;text-align:center;">
+        <img src="" id="selfBadgeLogo" alt="Flow Medical Solutions logo" style="width:44px;height:44px;border-radius:9px;margin-bottom:6px;">
+        <div style="font-size:12px;font-weight:800;color:#002856;letter-spacing:.03em;">FLOW MEDICAL SOLUTIONS</div>
+        <div style="font-size:9px;letter-spacing:.1em;color:#C08A3E;font-weight:700;text-transform:uppercase;margin-bottom:12px;">Visitor Badge &middot; Self Check-In</div>
+        <div style="font-size:26px;font-weight:900;color:#D32F2F;letter-spacing:.06em;text-transform:uppercase;border:3px solid #D32F2F;border-radius:8px;padding:5px 10px;display:inline-block;margin:4px 0 14px;">VISITOR</div>
+        <h3 id="selfBadgeName" style="margin:0 0 12px;color:#002856;font-size:19px;"></h3>
+        <div style="text-align:left;font-size:13px;margin:5px 0;color:#222;"><b style="color:#002856;">Visit Type:</b> <span id="selfBadgeType"></span></div>
+        <div style="text-align:left;font-size:13px;margin:5px 0;color:#222;"><b style="color:#002856;">Visiting:</b> <span id="selfBadgeHost"></span></div>
+        <div style="text-align:left;font-size:13px;margin:5px 0;color:#222;"><b style="color:#002856;">Check-in:</b> <span id="selfBadgeDate"></span></div>
+        <svg id="selfBarcode" style="margin-top:14px;max-width:100%;height:auto;"></svg>
+        <div style="margin-top:18px;padding-top:16px;border-top:1px dashed #D8D2C4;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Scan this with your phone's camera to check yourself out when you leave</div>
+          <div id="selfCheckoutQr" style="display:flex;justify-content:center;"></div>
+        </div>
+      </div>
+      <p style="font-size:12.5px;color:var(--muted);margin-top:14px;">You can also show the barcode above at the desk when leaving</p>
+      <button class="btn btn-gold" id="selfWhatsAppBtn" style="margin-top:14px;width:100%;">Resend Badge via WhatsApp</button>
+      <button class="btn btn-ghost" id="selfAnotherBtn" style="margin-top:10px;width:100%;">Register another visitor</button>
+    </div>
+  </div>
+</div>
+
+<div class="self-wrap" id="selfCheckoutView" style="display:none">
+  <div class="self-card" style="text-align:center;">
+    <img src="" id="checkoutLogoImg" alt="Flow Medical Solutions logo" style="width:56px;height:56px;border-radius:12px;margin-bottom:10px;">
+    <div class="brand-eyebrow" style="text-align:center">Visitor Check-Out</div>
+
+    <div id="checkoutManualScreen">
+      <h1 class="self-title">Enter your badge code to check out</h1>
+      <p style="font-size:13px;color:var(--muted);margin:-6px 0 16px;">This is the code printed under the barcode on your visitor badge.</p>
+      <form id="checkoutForm">
+        <div class="field">
+          <label>Badge Code <span class="req">*</span></label>
+          <input type="text" id="cfCode" required placeholder="e.g. VS1A2B3C4D" autocapitalize="characters">
+        </div>
+        <button type="submit" class="btn btn-primary" id="checkoutSubmitBtn" disabled>Connecting…</button>
+        <div id="checkoutConnectNote" style="text-align:center;font-size:12px;color:var(--muted);margin-top:8px;">Connecting to the visitor system…</div>
+      </form>
+    </div>
+
+    <div id="checkoutProcessingScreen" style="display:none;">
+      <p style="font-size:15px;color:var(--muted);margin-top:10px;">Checking you out…</p>
+    </div>
+
+    <div id="checkoutResultScreen" style="display:none;">
+      <div id="checkoutResultIcon" class="success-check">✓</div>
+      <h2 id="checkoutResultTitle" style="margin:14px 0 8px;">You're checked out</h2>
+      <p id="checkoutResultMessage" style="font-size:14px;color:var(--muted);">Thank you for visiting Flow Medical Solutions!</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyd1FPRC99CslP5-vPuvAB6T8fn8v5IQsb2ghOriH5D7BfIzQ5ahOStLqX5WEhufgMn/exec";
+const SHEET_SECRET_TOKEN = "5eba9cbf798cc05b868781b5a075f36d"; // must match SECRET_TOKEN in the Apps Script code exactly
+
+const STORAGE_KEY = "visitors-log"; // local backup copy only
+let visitors = [];
+let loaded = false;
+
+const typeColors = {
+  "Business Meeting":         {bg:"#E4EAF2", fg:"#002856"},
+  "Meeting":                  {bg:"#E4E8F2", fg:"#3D5A80"},
+  "Administrative Review":    {bg:"#EDEBE4", fg:"#6B756F"},
+  "Delivery / Maintenance":   {bg:"#F3E4C8", fg:"#8A5E1E"},
+  "Contractor / Technician":  {bg:"#EAEFD9", fg:"#5C6B2E"},
+  "Personal Visit":           {bg:"#F3E1E3", fg:"#95414C"},
+  "Other":                    {bg:"#EDEBE4", fg:"#5B6664"}
+};
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+function updateClock(){
+  const now = new Date();
+  document.getElementById('clockTime').textContent = now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+  document.getElementById('clockDate').textContent = now.toLocaleDateString('en-US', {weekday:'long', day:'2-digit', month:'2-digit', year:'numeric'});
+}
+updateClock();
+setInterval(updateClock, 15000);
+
+function jsonpRequest(url, timeoutMs){
+  return new Promise((resolve, reject) => {
+    const cbName = 'jsonpCb_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+    const script = document.createElement('script');
+    let done = false;
+
+    const cleanup = () => {
+      delete window[cbName];
+      if(script.parentNode) script.parentNode.removeChild(script);
+    };
+
+    window[cbName] = (data) => {
+      if(done) return;
+      done = true;
+      cleanup();
+      resolve(data);
+    };
+
+    script.onerror = () => {
+      if(done) return;
+      done = true;
+      cleanup();
+      reject(new Error('Failed to load script (JSONP) - check that the Google Sheets link is correct and published as Anyone'));
+    };
+
+    const sep = url.indexOf('?') === -1 ? '?' : '&';
+    script.src = url + sep + 'callback=' + cbName;
+    document.body.appendChild(script);
+
+    setTimeout(() => {
+      if(done) return;
+      done = true;
+      cleanup();
+      reject(new Error('Connection to Google Sheets timed out'));
+    }, timeoutMs || 10000);
+  });
+}
+
+async function loadVisitors(timeoutMs){
+  try{
+    // Google Apps Script web apps do not reliably expose JSON to cross-origin
+    // fetch() from GitHub Pages. Use the JSONP helper already included above.
+    const url = SHEET_WEBAPP_URL + '?token=' + encodeURIComponent(SHEET_SECRET_TOKEN);
+    const data = await jsonpRequest(url, timeoutMs || 15000);
+    if(data && data.error){ throw new Error(data.error); }
+    if(!Array.isArray(data)){ throw new Error('Unexpected response from Google Sheets'); }
+    visitors = data;
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(visitors)); }catch(e){}
+    hideDiag();
+  }catch(e){
+    showDiag('Could not connect to Google Sheets: ' + (e && e.message ? e.message : e) + ' - showing last locally saved copy');
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      visitors = raw ? JSON.parse(raw) : [];
+    }catch(e2){ visitors = []; }
+  }
+  loaded = true;
+  render();
+}
+
+async function saveVisitors(){
+  // Always keep a local copy first.
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(visitors)); }catch(e){}
+
+  try{
+    // Simple text/plain POST avoids a CORS preflight. Google Apps Script Web Apps
+    // accept this request through doPost(e). We intentionally use no-cors because
+    // the browser is not allowed to read the cross-origin response.
+    await fetch(SHEET_WEBAPP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      redirect: 'follow',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify({ token: SHEET_SECRET_TOKEN, visitors: visitors })
+    });
+    hideDiag();
+  }catch(e){
+    showDiag('Could not save to Google Sheets: ' + (e && e.message ? e.message : e) + ' - local copy was saved');
+  }
+}
+
+function showDiag(msg){
+  let d = document.getElementById('diagBox');
+  if(!d){
+    d = document.createElement('div');
+    d.id = 'diagBox';
+    d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#B4525C;color:#fff;padding:10px 16px;font-size:13px;z-index:999;text-align:center;';
+    document.body.prepend(d);
+  }
+  d.textContent = 'Diagnostic: ' + msg;
+}
+
+function hideDiag(){
+  const d = document.getElementById('diagBox');
+  if(d) d.remove();
+}
+
+const PUBLISHED_URL = 'https://sanalshebli-create.github.io/flow-vistor/';
+
+function showSelfView(){
+  document.getElementById('adminView').style.display = 'none';
+  document.getElementById('selfView').style.display = 'block';
+  window.scrollTo(0,0);
+}
+
+function showSelfCheckoutView(){
+  document.getElementById('adminView').style.display = 'none';
+  document.getElementById('selfCheckoutView').style.display = 'block';
+  window.scrollTo(0,0);
+}
+
+function initMode(){
+  const params = new URLSearchParams(location.search);
+  const isSelf = params.get('self') === '1';
+  const isCheckout = params.get('checkout') === '1';
+  if(isSelf){
+    showSelfView();
+  } else if(isCheckout){
+    showSelfCheckoutView();
+  }
+  return {isSelf, isCheckout, code: params.get('code') || ''};
+}
+
+function renderSelfLink(){
+  const url = PUBLISHED_URL + '?self=1';
+  const input = document.getElementById('selfLinkText');
+  if(input) input.value = url;
+  const qrBox = document.getElementById('qrcodeBox');
+  if(qrBox && window.QRCode){
+    qrBox.innerHTML = '';
+    new QRCode(qrBox, {text:url, width:130, height:130, colorDark:"#001B3D", colorLight:"#ffffff", correctLevel: QRCode.CorrectLevel.M});
+  }
+}
+
+function printSelfQr(){
+  const url = PUBLISHED_URL + '?self=1';
+  if(!window.QRCode){ toast('QR code library did not load - check your connection'); return; }
+
+  // Render a large, high-resolution QR code offscreen so it stays crisp on A4.
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:fixed;left:-9999px;top:0;';
+  document.body.appendChild(holder);
+  new QRCode(holder, {text:url, width:520, height:520, colorDark:"#001B3D", colorLight:"#ffffff", correctLevel: QRCode.CorrectLevel.M});
+
+  let qrDataUrl = '';
+  const canvasEl = holder.querySelector('canvas');
+  const imgEl = holder.querySelector('img');
+  if(canvasEl){ qrDataUrl = canvasEl.toDataURL('image/png'); }
+  else if(imgEl){ qrDataUrl = imgEl.src; }
+  document.body.removeChild(holder);
+
+  if(!qrDataUrl){ toast('Could not generate the QR code for printing'); return; }
+
+  const w = window.open('', '_blank', 'width=900,height=1100');
+  if(!w){ toast('Please allow pop-ups to print'); return; }
+  w.document.write(`<!DOCTYPE html><html dir="ltr" lang="en"><head><meta charset="utf-8"><title>Visitor Self Check-In QR</title>
+    <style>
+      @page{ size:A4; margin:20mm; }
+      html,body{height:100%;}
+      body{font-family:Tahoma,Arial,sans-serif;text-align:center;margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;}
+      .sheet{max-width:480px;width:100%;}
+      .logo{width:76px;height:76px;border-radius:16px;margin-bottom:14px;}
+      .company{font-size:18px;font-weight:800;color:#002856;letter-spacing:.03em;margin-bottom:4px;}
+      .company-sub{font-size:12px;letter-spacing:.1em;color:#C08A3E;font-weight:700;text-transform:uppercase;margin-bottom:26px;}
+      h1{margin:0 0 26px;color:#002856;font-size:30px;}
+      .qr-frame{border:3px solid #002856;border-radius:20px;padding:28px;display:inline-block;}
+      .qr-frame img{width:400px;height:400px;display:block;}
+      .instructions{margin-top:26px;font-size:15px;color:#333;line-height:1.5;}
+    </style></head>
+    <body>
+      <div class="sheet">
+        <img class="logo" src="${LOGO_DATA_URI}" alt="Flow Medical Solutions logo">
+        <div class="company">FLOW MEDICAL SOLUTIONS</div>
+        <div class="company-sub">Visitor Reception</div>
+        <h1>Self Check-In</h1>
+        <div class="qr-frame"><img src="${qrDataUrl}" alt="Self check-in QR code"></div>
+        <p class="instructions">Scan this code with your phone camera to check yourself in as a visitor.</p>
+      </div>
+      <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 300); };<\/script>
+    </body></html>`);
+  w.document.close();
+}
+
+document.getElementById('printQrBtn')?.addEventListener('click', printSelfQr);
+
+document.getElementById('copyLinkBtn')?.addEventListener('click', async ()=>{
+  const val = document.getElementById('selfLinkText').value;
+  try{ await navigator.clipboard.writeText(val); toast('Link copied'); }
+  catch(e){ toast('Could not copy automatically, please copy the link manually'); }
+});
+
+function isSameDay(a,b){
+  return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+}
+
+function computeStats(){
+  const now = new Date();
+  const inside = visitors.filter(v=>v.status==='in').length;
+  const today = visitors.filter(v=>isSameDay(new Date(v.checkIn), now)).length;
+  const month = visitors.filter(v=>{
+    const d = new Date(v.checkIn);
+    return d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth();
+  }).length;
+  document.getElementById('statInside').textContent = inside;
+  document.getElementById('statToday').textContent = today;
+  document.getElementById('statMonth').textContent = month;
+}
+
+function fmtTime(iso){
+  return new Date(iso).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+}
+function fmtDate(iso){
+  return new Date(iso).toLocaleDateString('en-US', {day:'2-digit', month:'2-digit'});
+}
+
+function render(){
+  computeStats();
+  const wrap = document.getElementById('tableWrap');
+  if(!loaded){
+    wrap.innerHTML = '<div class="loading">Loading log...</div>';
+    return;
+  }
+
+  const search = document.getElementById('searchBox').value.trim().toLowerCase();
+  const fStatus = document.getElementById('filterStatus').value;
+  const fType = document.getElementById('filterType').value;
+
+  let list = [...visitors].sort((a,b)=> new Date(b.checkIn) - new Date(a.checkIn));
+
+  list = list.filter(v=>{
+    if(fStatus!=='all' && v.status!==fStatus) return false;
+    if(fType!=='all' && v.type!==fType) return false;
+    if(search){
+      const hay = (v.name+' '+v.host+' '+v.company).toLowerCase();
+      if(!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  if(list.length===0){
+    wrap.innerHTML = '<div class="empty"><div class="big">No matching visits</div>Register a new visitor or change the filters</div>';
+    return;
+  }
+
+  let html = '<table><thead><tr>' +
+    '<th>Visitor</th><th>Visit Type</th><th>Visited Dept.</th><th>Status</th><th>Check-in</th><th>Check-out</th><th></th>' +
+    '</tr></thead><tbody>';
+
+  for(const v of list){
+    const colors = typeColors[v.type] || typeColors['Other'];
+    html += '<tr>';
+    html += `<td><div class="visitor-name">${escapeHtml(v.name)}${v.selfRegistered ? ' <span class="self-tag">Self</span>' : ''}</div><div class="visitor-sub">${escapeHtml(v.company||v.id||'')}</div></td>`;
+    html += `<td><span class="tag" style="background:${colors.bg};color:${colors.fg}">${escapeHtml(v.type)}</span></td>`;
+    html += `<td>${escapeHtml(v.host||'—')}</td>`;
+    html += v.status==='in'
+      ? `<td><span class="status"><span class="dot in"></span>Inside</span></td>`
+      : `<td><span class="status"><span class="dot out"></span>Left</span></td>`;
+    html += `<td>${fmtTime(v.checkIn)} <span class="visitor-sub">${fmtDate(v.checkIn)}</span></td>`;
+    html += `<td>${v.checkOut ? fmtTime(v.checkOut) : '—'}</td>`;
+    html += `<td><div class="row-actions">`;
+    if(v.status==='in'){
+      html += `<button class="btn btn-gold btn-sm" onclick="checkout('${v.id}')">Check Out</button>`;
+    }
+    html += `<button class="btn btn-ghost btn-sm" onclick="printBadge('${v.id}')">Print Badge</button>`;
+    html += `<button class="btn btn-ghost btn-sm" onclick="shareBadgeWhatsApp('${v.id}')">WhatsApp</button>`;
+    html += `<button class="btn btn-danger-outline btn-sm" onclick="removeVisitor('${v.id}')">Delete</button>`;
+    html += `</div></td>`;
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function escapeHtml(s){
+  return String(s === undefined || s === null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+document.getElementById('visitorForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const name = document.getElementById('fName').value.trim();
+  const idNumber = document.getElementById('fId').value.trim();
+  const phone = document.getElementById('fPhone').value.trim();
+  const type = document.getElementById('fType').value;
+  const dept = document.getElementById('fDept').value;
+  const hostName = document.getElementById('fHostName').value.trim();
+  const company = document.getElementById('fCompany').value.trim();
+  const notes = document.getElementById('fNotes').value.trim();
+  if(!name || !idNumber || !phone || !type || !dept || !hostName || !company || !notes){
+    toast('Please fill in all fields');
+    return;
+  }
+  const host = dept + ' - ' + hostName;
+
+  const record = {
+    id: 'v_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    name,
+    idNumber,
+    phone,
+    type,
+    host,
+    company,
+    notes,
+    status: 'in',
+    checkIn: new Date().toISOString(),
+    checkOut: null,
+    barcode: generateBarcodeValue()
+  };
+
+  visitors.push(record);
+  render();
+  e.target.reset();
+  toast('Visitor checked in successfully');
+  await saveVisitors();
+});
+
+window.checkout = async function(id){
+  const v = visitors.find(x=>x.id===id);
+  if(!v) return;
+  v.status = 'out';
+  v.checkOut = new Date().toISOString();
+  render();
+  toast('Visitor checked out');
+  await saveVisitors();
+};
+
+window.removeVisitor = async function(id){
+  if(!confirm('Are you sure you want to delete this record?')) return;
+  visitors = visitors.filter(x=>x.id!==id);
+  render();
+  toast('Record deleted');
+  await saveVisitors();
+};
+
+function generateBarcodeValue(){
+  return 'VS' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2,4).toUpperCase();
+}
+
+const LOGO_DATA_URI = "data:image/png;base64,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";
+document.getElementById('authGateLogo').src = LOGO_DATA_URI;
+document.getElementById('selfLogoImg').src = LOGO_DATA_URI;
+
+window.printBadge = function(id){
+  const v = visitors.find(x=>x.id===id);
+  if(!v) return;
+  const canvas = document.createElement('canvas');
+  JsBarcode(canvas, v.barcode, {format:"CODE128", displayValue:true, fontSize:20, fontOptions:"bold", width:3, height:100, margin:10});
+  const dataUrl = canvas.toDataURL('image/png');
+  const w = window.open('', '_blank', 'width=900,height=1100');
+  if(!w){ toast('Please allow pop-ups to print'); return; }
+  w.document.write(`<!DOCTYPE html><html dir="ltr" lang="en"><head><meta charset="utf-8"><title>Visitor Badge</title>
+    <style>
+      @page{ size:A4; margin:20mm; }
+      html,body{height:100%;}
+      body{font-family:Tahoma,Arial,sans-serif;text-align:center;margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;}
+      .badge{border:3px solid #002856;border-radius:18px;padding:40px;max-width:420px;width:100%;margin:0 auto;}
+      .logo{width:68px;height:68px;border-radius:14px;margin-bottom:12px;}
+      .company{font-size:16px;font-weight:800;color:#002856;letter-spacing:.03em;margin-bottom:3px;}
+      .company-sub{font-size:11px;letter-spacing:.1em;color:#C08A3E;font-weight:700;text-transform:uppercase;margin-bottom:18px;}
+      .visitor-stamp{font-size:36px;font-weight:900;color:#D32F2F;letter-spacing:.06em;text-transform:uppercase;border:3px solid #D32F2F;border-radius:10px;padding:8px 14px;display:inline-block;margin:8px 0 20px;transform:rotate(-2deg);}
+      h2{margin:0 0 18px;color:#002856;font-size:26px;}
+      .row{text-align:left;font-size:15px;margin:8px 0;color:#222;}
+      .row b{color:#002856;}
+      img.barcode-img{margin-top:22px;max-width:100%;}
+    </style></head>
+    <body>
+      <div class="badge">
+        <img class="logo" src="${LOGO_DATA_URI}" alt="Flow Medical Solutions logo">
+        <div class="company">FLOW MEDICAL SOLUTIONS</div>
+        <div class="company-sub">Visitor Badge${v.selfRegistered ? ' &middot; Self Check-In' : ''}</div>
+        <div class="visitor-stamp">VISITOR</div>
+        <h2>${escapeHtml(v.name)}</h2>
+        <div class="row"><b>Company:</b> ${escapeHtml(v.company||'—')}</div>
+        <div class="row"><b>Visit Type:</b> ${escapeHtml(v.type)}</div>
+        <div class="row"><b>Visiting:</b> ${escapeHtml(v.host||'—')}</div>
+        <div class="row"><b>Check-in Date:</b> ${fmtDate(v.checkIn)} - ${fmtTime(v.checkIn)}</div>
+        <img class="barcode-img" src="${dataUrl}" alt="barcode">
+      </div>
+      <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 300); };<\/script>
+    </body></html>`);
+  w.document.close();
+};
+
+function buildBadgeElement(v, barcodeDataUrl){
+  const el = document.createElement('div');
+  el.style.cssText = 'font-family:Tahoma,Arial,sans-serif;text-align:center;padding:24px;background:#fff;width:320px;';
+  el.innerHTML = `
+    <div style="border:2px solid #002856;border-radius:14px;padding:24px;">
+      <img src="${LOGO_DATA_URI}" alt="logo" style="width:48px;height:48px;border-radius:9px;margin-bottom:8px;">
+      <div style="font-size:13px;font-weight:800;color:#002856;letter-spacing:.03em;margin-bottom:2px;">FLOW MEDICAL SOLUTIONS</div>
+      <div style="font-size:9px;letter-spacing:.1em;color:#C08A3E;font-weight:700;text-transform:uppercase;margin-bottom:14px;">Visitor Badge${v.selfRegistered ? ' &middot; Self Check-In' : ''}</div>
+      <div style="font-size:30px;font-weight:900;color:#D32F2F;letter-spacing:.06em;text-transform:uppercase;border:3px solid #D32F2F;border-radius:8px;padding:6px 10px;display:inline-block;margin:6px 0 16px;">VISITOR</div>
+      <h2 style="margin:0 0 14px;color:#002856;font-size:20px;">${escapeHtml(v.name)}</h2>
+      <div style="text-align:left;font-size:13px;margin:6px 0;color:#222;"><b style="color:#002856;">Company:</b> ${escapeHtml(v.company||'—')}</div>
+      <div style="text-align:left;font-size:13px;margin:6px 0;color:#222;"><b style="color:#002856;">Visit Type:</b> ${escapeHtml(v.type)}</div>
+      <div style="text-align:left;font-size:13px;margin:6px 0;color:#222;"><b style="color:#002856;">Visiting:</b> ${escapeHtml(v.host||'—')}</div>
+      <div style="text-align:left;font-size:13px;margin:6px 0;color:#222;"><b style="color:#002856;">Check-in Date:</b> ${fmtDate(v.checkIn)} - ${fmtTime(v.checkIn)}</div>
+      <img src="${barcodeDataUrl}" alt="barcode" style="margin-top:16px;max-width:100%;">
+    </div>
+  `;
+  return el;
+}
+
+window.shareBadgeWhatsApp = async function(id){
+  const v = visitors.find(x=>x.id===id);
+  if(!v) return;
+
+  // Open the WhatsApp tab synchronously, right on the click, before any
+  // async image work — most browsers block window.open() once you're a
+  // few "awaits" deep into a click handler, which is why this used to
+  // silently do nothing on some phones/browsers.
+  const shareText = `Visitor Badge - ${v.name} - ${v.type}`;
+  const waWin = window.open('', '_blank');
+
+  const barcodeCanvas = document.createElement('canvas');
+  JsBarcode(barcodeCanvas, v.barcode, {format:"CODE128", displayValue:true, fontSize:16, fontOptions:"bold", width:2.4, height:80, margin:8});
+  const barcodeDataUrl = barcodeCanvas.toDataURL('image/png');
+
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;';
+  const badgeEl = buildBadgeElement(v, barcodeDataUrl);
+  holder.appendChild(badgeEl);
+  document.body.appendChild(holder);
+
+  try{
+    const canvas = await html2canvas(badgeEl, {backgroundColor:'#ffffff', scale:2});
+    document.body.removeChild(holder);
+
+    canvas.toBlob(async (blob) => {
+      if(!blob){
+        toast('Could not generate badge image');
+        if(waWin) waWin.close();
+        return;
+      }
+      const file = new File([blob], `visitor-badge-${v.name.replace(/\s+/g,'-')}.png`, {type:'image/png'});
+
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        if(waWin) waWin.close(); // native share sheet replaces the WhatsApp tab
+        try{
+          await navigator.share({files:[file], title:'Visitor Badge', text:shareText});
+          return;
+        }catch(err){
+          if(err && err.name === 'AbortError') return; // user cancelled share sheet
+        }
+      }
+
+      // Fallback: no native file-sharing support (e.g. desktop Chrome) -
+      // download the image and point the already-open tab at WhatsApp
+      // with a prefilled text message.
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('Badge image downloaded - attach it in the WhatsApp chat that opens');
+      const waUrl = 'https://wa.me/?text=' + encodeURIComponent(shareText);
+      if(waWin){ waWin.location.href = waUrl; } else { window.open(waUrl, '_blank'); }
+    }, 'image/png');
+  }catch(err){
+    if(holder.parentNode) document.body.removeChild(holder);
+    if(waWin) waWin.close();
+    toast('Could not create badge image for sharing');
+  }
+};
+
+document.getElementById('scanBox').addEventListener('keydown', async (e)=>{
+  if(e.key !== 'Enter') return;
+  const code = e.target.value.trim();
+  e.target.value = '';
+  if(!code) return;
+  const v = visitors.find(x=>x.barcode===code);
+  if(!v){ toast('No visitor found with this barcode'); return; }
+  if(v.status==='out'){ toast('This visitor has already checked out'); return; }
+  await checkout(v.id);
+});
+
+document.getElementById('searchBox').addEventListener('input', render);
+document.getElementById('filterStatus').addEventListener('change', render);
+document.getElementById('filterType').addEventListener('change', render);
+
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  if(visitors.length===0){ toast('No data to export'); return; }
+  const headers = ['Name','ID Number','Phone','Visit Type','Department / Person','Company','Notes','Check-in Time','Check-out Time'];
+  const rows = visitors.map(v=>{
+    const checkInStr = v.checkIn ? (new Date(v.checkIn)).toLocaleString('en-US') : '';
+    const checkOutStr = v.checkOut ? (new Date(v.checkOut)).toLocaleString('en-US') : '';
+    return [
+      v.name,
+      v.idNumber,
+      v.phone,
+      v.type,
+      v.host,
+      v.company,
+      v.notes,
+      checkInStr,
+      checkOutStr
+    ];
+  });
+  const wsData = [headers, ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = headers.map(() => ({wch: 18}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Visitors Report');
+  XLSX.writeFile(wb, 'visitor-log-' + new Date().toISOString().slice(0,10) + '.xlsx');
+});
+
+document.getElementById('selfForm')?.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(!loaded){ toast('Still connecting, please try again in a few seconds'); return; }
+  const name = document.getElementById('sfName').value.trim();
+  const idNumber = document.getElementById('sfId').value.trim();
+  const phone = document.getElementById('sfPhone').value.trim();
+  const type = document.getElementById('sfType').value;
+  const dept = document.getElementById('sfDept').value;
+  const hostName = document.getElementById('sfHostName').value.trim();
+  const company = document.getElementById('sfCompany').value.trim();
+  if(!name || !idNumber || !phone || !type || !dept || !hostName || !company){
+    toast('Please fill in all fields');
+    return;
+  }
+  const host = dept + ' - ' + hostName;
+
+  const record = {
+    id: 'v_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    name,
+    idNumber,
+    phone,
+    type,
+    host,
+    company,
+    notes: '',
+    status: 'in',
+    checkIn: new Date().toISOString(),
+    checkOut: null,
+    barcode: generateBarcodeValue(),
+    selfRegistered: true
+  };
+  visitors.push(record);
+  await saveVisitors();
+
+  window.lastSelfRecordId = record.id;
+  document.getElementById('selfFormScreen').style.display = 'none';
+  document.getElementById('selfSuccessScreen').style.display = 'block';
+  document.getElementById('selfBadgeLogo').src = LOGO_DATA_URI;
+  document.getElementById('selfBadgeName').textContent = record.name;
+  document.getElementById('selfBadgeType').textContent = record.type;
+  document.getElementById('selfBadgeHost').textContent = record.host;
+  document.getElementById('selfBadgeDate').textContent = fmtDate(record.checkIn) + ' - ' + fmtTime(record.checkIn);
+  try{
+    JsBarcode('#selfBarcode', record.barcode, {format:"CODE128", width:2.6, height:90, displayValue:true, fontSize:18, fontOptions:"bold", margin:8});
+  }catch(err){}
+  const checkoutQrBox = document.getElementById('selfCheckoutQr');
+  if(checkoutQrBox && window.QRCode){
+    checkoutQrBox.innerHTML = '';
+    const checkoutUrl = PUBLISHED_URL + '?checkout=1&code=' + encodeURIComponent(record.barcode);
+    new QRCode(checkoutQrBox, {text:checkoutUrl, width:110, height:110, colorDark:"#001B3D", colorLight:"#ffffff", correctLevel: QRCode.CorrectLevel.M});
+  }
+  e.target.reset();
+
+  // Send the badge to WhatsApp automatically right after check-in
+  shareBadgeWhatsApp(record.id);
+});
+
+document.getElementById('selfWhatsAppBtn')?.addEventListener('click', ()=>{
+  if(window.lastSelfRecordId) shareBadgeWhatsApp(window.lastSelfRecordId);
+});
+
+document.getElementById('selfAnotherBtn')?.addEventListener('click', ()=>{
+  document.getElementById('selfSuccessScreen').style.display = 'none';
+  document.getElementById('selfFormScreen').style.display = 'block';
+});
+
+const ADMIN_PW_HASH = '811c58ddddaf26e71f17fcef44249511c375c843d042fb30c034c9705746e10c';
+
+async function sha256Hex(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function unlockAdmin(){
+  renderSelfLink();
+  loadVisitors();
+}
+
+// Self check-in kiosks must never leave the visitor stuck on "please wait" -
+// this connects in the background, shows clear status, retries once on
+// failure, and always unlocks the Check In button once it's done trying.
+async function initSelfConnection(){
+  const btn = document.getElementById('selfSubmitBtn');
+  const note = document.getElementById('selfConnectNote');
+  await loadVisitors(8000);
+  if(!loaded || document.getElementById('diagBox')){
+    if(note) note.textContent = 'First attempt failed, retrying…';
+    await loadVisitors(8000);
+  }
+  if(btn){ btn.disabled = false; btn.textContent = 'Check In'; }
+  if(note){
+    note.textContent = document.getElementById('diagBox')
+      ? 'Connection is slow, but you can still check in now.'
+      : '';
+  }
+}
+
+function showCheckoutResult(success, title, message){
+  document.getElementById('checkoutManualScreen').style.display = 'none';
+  document.getElementById('checkoutProcessingScreen').style.display = 'none';
+  document.getElementById('checkoutResultScreen').style.display = 'block';
+  document.getElementById('checkoutResultIcon').textContent = success ? '✓' : '✕';
+  document.getElementById('checkoutResultIcon').style.color = success ? '' : '#B4525C';
+  document.getElementById('checkoutResultIcon').style.background = success ? '' : '#F7E6E8';
+  document.getElementById('checkoutResultTitle').textContent = title;
+  document.getElementById('checkoutResultMessage').textContent = message;
+}
+
+async function processCheckoutCode(code){
+  const trimmed = (code || '').trim();
+  if(!trimmed) return;
+  document.getElementById('checkoutManualScreen').style.display = 'none';
+  document.getElementById('checkoutProcessingScreen').style.display = 'block';
+  const v = visitors.find(x => x.barcode && x.barcode.toUpperCase() === trimmed.toUpperCase());
+  if(!v){
+    showCheckoutResult(false, "We couldn't find that badge", 'Please double check the code printed under your barcode, or check out with reception.');
+    return;
+  }
+  if(v.status === 'out'){
+    showCheckoutResult(true, "You're already checked out", 'Thank you for visiting Flow Medical Solutions!');
+    return;
+  }
+  await checkout(v.id);
+  showCheckoutResult(true, "You're checked out", 'Thank you for visiting Flow Medical Solutions, ' + v.name + '!');
+}
+
+async function initCheckoutConnection(codeFromUrl){
+  const logo = document.getElementById('checkoutLogoImg');
+  if(logo) logo.src = LOGO_DATA_URI;
+
+  if(codeFromUrl){
+    // Came from a personal QR code - skip the form entirely.
+    document.getElementById('checkoutManualScreen').style.display = 'none';
+    document.getElementById('checkoutProcessingScreen').style.display = 'block';
+  }
+
+  const btn = document.getElementById('checkoutSubmitBtn');
+  const note = document.getElementById('checkoutConnectNote');
+  await loadVisitors(8000);
+  if(!loaded || document.getElementById('diagBox')){
+    if(note) note.textContent = 'First attempt failed, retrying…';
+    await loadVisitors(8000);
+  }
+
+  if(codeFromUrl){
+    await processCheckoutCode(codeFromUrl);
+    return;
+  }
+
+  if(btn){ btn.disabled = false; btn.textContent = 'Check Out'; }
+  if(note){
+    note.textContent = document.getElementById('diagBox')
+      ? 'Connection is slow, but you can still check out now.'
+      : '';
+  }
+}
+
+document.getElementById('checkoutForm')?.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const code = document.getElementById('cfCode').value;
+  await processCheckoutCode(code);
+});
+
+const _mode = initMode();
+if(_mode.isSelf){
+  initSelfConnection(); // self check-in view needs visitor data loaded too, but stays hidden regardless
+} else if(_mode.isCheckout){
+  initCheckoutConnection(_mode.code);
+} else if(sessionStorage.getItem('adminAuthed') === '1'){
+  unlockAdmin();
+} else {
+  document.getElementById('authGate').style.display = 'flex';
+  document.getElementById('authForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const entered = document.getElementById('authPwInput').value;
+    const hash = await sha256Hex(entered);
+    if(hash === ADMIN_PW_HASH){
+      sessionStorage.setItem('adminAuthed', '1');
+      document.getElementById('authGate').style.display = 'none';
+      unlockAdmin();
+    } else {
+      document.getElementById('authError').style.display = 'block';
+      document.getElementById('authPwInput').value = '';
+      document.getElementById('authPwInput').focus();
+    }
+  });
+}
+function englishOnly(str){
+  // Strips Arabic script ranges (letters, presentation forms, diacritics) - keeps everything else (Latin, numbers, symbols, spaces)
+  return str.replace(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g, '');
+}
+
+function enforceEnglishOnly(el){
+  el.addEventListener('input', () => {
+    const cleaned = englishOnly(el.value);
+    if(cleaned !== el.value){
+      const pos = el.selectionStart - (el.value.length - cleaned.length);
+      el.value = cleaned;
+      try{ el.setSelectionRange(pos, pos); }catch(e){}
+    }
+  });
+}
+
+['fName','fId','fPhone','fHostName','fCompany','fNotes','sfName','sfId','sfPhone','sfHostName','sfCompany','searchBox','scanBox'].forEach(id => {
+  const el = document.getElementById(id);
+  if(el) enforceEnglishOnly(el);
+});
+</script>
+</body>
+</html>
