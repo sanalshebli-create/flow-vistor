@@ -134,7 +134,8 @@
 </head>
 <body>
 <script>
-  if(new URLSearchParams(location.search).get('self') === '1'){
+  const _qp = new URLSearchParams(location.search);
+  if(_qp.get('self') === '1' || _qp.get('checkout') === '1'){
     document.write('<style>#adminView{display:none !important;}</style>');
   }
 </script>
@@ -196,6 +197,21 @@
           <input type="text" id="selfLinkText" readonly>
           <button class="btn btn-ghost btn-sm" id="copyLinkBtn">Copy link</button>
           <button class="btn btn-gold btn-sm" id="printQrBtn">Print QR (A4)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:20px;">
+    <h2>Self check-out via visitor's phone</h2>
+    <div class="self-link-row">
+      <div id="qrcodeCheckoutBox"></div>
+      <div class="self-link-info">
+        <p>Print this QR code and place it at the exit / reception desk, alongside the check-in one. When a visitor scans it on their way out, they just enter the badge code printed under their barcode and their check-out is recorded instantly.</p>
+        <div class="link-copy">
+          <input type="text" id="checkoutLinkText" readonly>
+          <button class="btn btn-ghost btn-sm" id="copyCheckoutLinkBtn">Copy link</button>
+          <button class="btn btn-gold btn-sm" id="printCheckoutQrBtn">Print QR (A4)</button>
         </div>
       </div>
     </div>
@@ -374,10 +390,44 @@
         <div style="text-align:left;font-size:13px;margin:5px 0;color:#222;"><b style="color:#002856;">Visiting:</b> <span id="selfBadgeHost"></span></div>
         <div style="text-align:left;font-size:13px;margin:5px 0;color:#222;"><b style="color:#002856;">Check-in:</b> <span id="selfBadgeDate"></span></div>
         <svg id="selfBarcode" style="margin-top:14px;max-width:100%;height:auto;"></svg>
+        <div style="margin-top:18px;padding-top:16px;border-top:1px dashed #D8D2C4;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Scan this with your phone's camera to check yourself out when you leave</div>
+          <div id="selfCheckoutQr" style="display:flex;justify-content:center;"></div>
+        </div>
       </div>
-      <p style="font-size:12.5px;color:var(--muted);margin-top:14px;">Please show this barcode when leaving to check out</p>
+      <p style="font-size:12.5px;color:var(--muted);margin-top:14px;">You can also show the barcode above at the desk when leaving</p>
       <button class="btn btn-gold" id="selfWhatsAppBtn" style="margin-top:14px;width:100%;">Resend Badge via WhatsApp</button>
       <button class="btn btn-ghost" id="selfAnotherBtn" style="margin-top:10px;width:100%;">Register another visitor</button>
+    </div>
+  </div>
+</div>
+
+<div class="self-wrap" id="selfCheckoutView" style="display:none">
+  <div class="self-card" style="text-align:center;">
+    <img src="" id="checkoutLogoImg" alt="Flow Medical Solutions logo" style="width:56px;height:56px;border-radius:12px;margin-bottom:10px;">
+    <div class="brand-eyebrow" style="text-align:center">Visitor Check-Out</div>
+
+    <div id="checkoutManualScreen">
+      <h1 class="self-title">Enter your badge code to check out</h1>
+      <p style="font-size:13px;color:var(--muted);margin:-6px 0 16px;">This is the code printed under the barcode on your visitor badge.</p>
+      <form id="checkoutForm">
+        <div class="field">
+          <label>Badge Code <span class="req">*</span></label>
+          <input type="text" id="cfCode" required placeholder="e.g. VS1A2B3C4D" autocapitalize="characters">
+        </div>
+        <button type="submit" class="btn btn-primary" id="checkoutSubmitBtn" disabled>Connecting…</button>
+        <div id="checkoutConnectNote" style="text-align:center;font-size:12px;color:var(--muted);margin-top:8px;">Connecting to the visitor system…</div>
+      </form>
+    </div>
+
+    <div id="checkoutProcessingScreen" style="display:none;">
+      <p style="font-size:15px;color:var(--muted);margin-top:10px;">Checking you out…</p>
+    </div>
+
+    <div id="checkoutResultScreen" style="display:none;">
+      <div id="checkoutResultIcon" class="success-check">✓</div>
+      <h2 id="checkoutResultTitle" style="margin:14px 0 8px;">You're checked out</h2>
+      <p id="checkoutResultMessage" style="font-size:14px;color:var(--muted);">Thank you for visiting Flow Medical Solutions!</p>
     </div>
   </div>
 </div>
@@ -522,13 +572,22 @@ function showSelfView(){
   window.scrollTo(0,0);
 }
 
+function showSelfCheckoutView(){
+  document.getElementById('adminView').style.display = 'none';
+  document.getElementById('selfCheckoutView').style.display = 'block';
+  window.scrollTo(0,0);
+}
+
 function initMode(){
   const params = new URLSearchParams(location.search);
   const isSelf = params.get('self') === '1';
+  const isCheckout = params.get('checkout') === '1';
   if(isSelf){
     showSelfView();
+  } else if(isCheckout){
+    showSelfCheckoutView();
   }
-  return isSelf;
+  return {isSelf, isCheckout, code: params.get('code') || ''};
 }
 
 function renderSelfLink(){
@@ -542,8 +601,18 @@ function renderSelfLink(){
   }
 }
 
-function printSelfQr(){
-  const url = PUBLISHED_URL + '?self=1';
+function renderCheckoutLink(){
+  const url = PUBLISHED_URL + '?checkout=1';
+  const input = document.getElementById('checkoutLinkText');
+  if(input) input.value = url;
+  const qrBox = document.getElementById('qrcodeCheckoutBox');
+  if(qrBox && window.QRCode){
+    qrBox.innerHTML = '';
+    new QRCode(qrBox, {text:url, width:130, height:130, colorDark:"#001B3D", colorLight:"#ffffff", correctLevel: QRCode.CorrectLevel.M});
+  }
+}
+
+function printA4Qr(url, heading, subheading){
   if(!window.QRCode){ toast('QR code library did not load - check your connection'); return; }
 
   // Render a large, high-resolution QR code offscreen so it stays crisp on A4.
@@ -563,7 +632,7 @@ function printSelfQr(){
 
   const w = window.open('', '_blank', 'width=900,height=1100');
   if(!w){ toast('Please allow pop-ups to print'); return; }
-  w.document.write(`<!DOCTYPE html><html dir="ltr" lang="en"><head><meta charset="utf-8"><title>Visitor Self Check-In QR</title>
+  w.document.write(`<!DOCTYPE html><html dir="ltr" lang="en"><head><meta charset="utf-8"><title>${heading}</title>
     <style>
       @page{ size:A4; margin:20mm; }
       html,body{height:100%;}
@@ -582,19 +651,34 @@ function printSelfQr(){
         <img class="logo" src="${LOGO_DATA_URI}" alt="Flow Medical Solutions logo">
         <div class="company">FLOW MEDICAL SOLUTIONS</div>
         <div class="company-sub">Visitor Reception</div>
-        <h1>Self Check-In</h1>
-        <div class="qr-frame"><img src="${qrDataUrl}" alt="Self check-in QR code"></div>
-        <p class="instructions">Scan this code with your phone camera to check yourself in as a visitor.</p>
+        <h1>${heading}</h1>
+        <div class="qr-frame"><img src="${qrDataUrl}" alt="QR code"></div>
+        <p class="instructions">${subheading}</p>
       </div>
       <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 300); };<\/script>
     </body></html>`);
   w.document.close();
 }
 
+function printSelfQr(){
+  printA4Qr(PUBLISHED_URL + '?self=1', 'Self Check-In', 'Scan this code with your phone camera to check yourself in as a visitor.');
+}
+
+function printCheckoutQr(){
+  printA4Qr(PUBLISHED_URL + '?checkout=1', 'Self Check-Out', 'Scan this code with your phone camera, then enter your badge code to check yourself out.');
+}
+
 document.getElementById('printQrBtn')?.addEventListener('click', printSelfQr);
+document.getElementById('printCheckoutQrBtn')?.addEventListener('click', printCheckoutQr);
 
 document.getElementById('copyLinkBtn')?.addEventListener('click', async ()=>{
   const val = document.getElementById('selfLinkText').value;
+  try{ await navigator.clipboard.writeText(val); toast('Link copied'); }
+  catch(e){ toast('Could not copy automatically, please copy the link manually'); }
+});
+
+document.getElementById('copyCheckoutLinkBtn')?.addEventListener('click', async ()=>{
+  const val = document.getElementById('checkoutLinkText').value;
   try{ await navigator.clipboard.writeText(val); toast('Link copied'); }
   catch(e){ toast('Could not copy automatically, please copy the link manually'); }
 });
@@ -959,6 +1043,12 @@ document.getElementById('selfForm')?.addEventListener('submit', async (e)=>{
   try{
     JsBarcode('#selfBarcode', record.barcode, {format:"CODE128", width:2.6, height:90, displayValue:true, fontSize:18, fontOptions:"bold", margin:8});
   }catch(err){}
+  const checkoutQrBox = document.getElementById('selfCheckoutQr');
+  if(checkoutQrBox && window.QRCode){
+    checkoutQrBox.innerHTML = '';
+    const checkoutUrl = PUBLISHED_URL + '?checkout=1&code=' + encodeURIComponent(record.barcode);
+    new QRCode(checkoutQrBox, {text:checkoutUrl, width:110, height:110, colorDark:"#001B3D", colorLight:"#ffffff", correctLevel: QRCode.CorrectLevel.M});
+  }
   e.target.reset();
 
   // Send the badge to WhatsApp automatically right after check-in
@@ -983,6 +1073,7 @@ async function sha256Hex(str){
 
 function unlockAdmin(){
   renderSelfLink();
+  renderCheckoutLink();
   loadVisitors();
 }
 
@@ -1005,9 +1096,77 @@ async function initSelfConnection(){
   }
 }
 
-const _isSelfMode = initMode();
-if(_isSelfMode){
+function showCheckoutResult(success, title, message){
+  document.getElementById('checkoutManualScreen').style.display = 'none';
+  document.getElementById('checkoutProcessingScreen').style.display = 'none';
+  document.getElementById('checkoutResultScreen').style.display = 'block';
+  document.getElementById('checkoutResultIcon').textContent = success ? '✓' : '✕';
+  document.getElementById('checkoutResultIcon').style.color = success ? '' : '#B4525C';
+  document.getElementById('checkoutResultIcon').style.background = success ? '' : '#F7E6E8';
+  document.getElementById('checkoutResultTitle').textContent = title;
+  document.getElementById('checkoutResultMessage').textContent = message;
+}
+
+async function processCheckoutCode(code){
+  const trimmed = (code || '').trim();
+  if(!trimmed) return;
+  document.getElementById('checkoutManualScreen').style.display = 'none';
+  document.getElementById('checkoutProcessingScreen').style.display = 'block';
+  const v = visitors.find(x => x.barcode && x.barcode.toUpperCase() === trimmed.toUpperCase());
+  if(!v){
+    showCheckoutResult(false, "We couldn't find that badge", 'Please double check the code printed under your barcode, or check out with reception.');
+    return;
+  }
+  if(v.status === 'out'){
+    showCheckoutResult(true, "You're already checked out", 'Thank you for visiting Flow Medical Solutions!');
+    return;
+  }
+  await checkout(v.id);
+  showCheckoutResult(true, "You're checked out", 'Thank you for visiting Flow Medical Solutions, ' + v.name + '!');
+}
+
+async function initCheckoutConnection(codeFromUrl){
+  const logo = document.getElementById('checkoutLogoImg');
+  if(logo) logo.src = LOGO_DATA_URI;
+
+  if(codeFromUrl){
+    // Came from a personal QR code - skip the form entirely.
+    document.getElementById('checkoutManualScreen').style.display = 'none';
+    document.getElementById('checkoutProcessingScreen').style.display = 'block';
+  }
+
+  const btn = document.getElementById('checkoutSubmitBtn');
+  const note = document.getElementById('checkoutConnectNote');
+  await loadVisitors(8000);
+  if(!loaded || document.getElementById('diagBox')){
+    if(note) note.textContent = 'First attempt failed, retrying…';
+    await loadVisitors(8000);
+  }
+
+  if(codeFromUrl){
+    await processCheckoutCode(codeFromUrl);
+    return;
+  }
+
+  if(btn){ btn.disabled = false; btn.textContent = 'Check Out'; }
+  if(note){
+    note.textContent = document.getElementById('diagBox')
+      ? 'Connection is slow, but you can still check out now.'
+      : '';
+  }
+}
+
+document.getElementById('checkoutForm')?.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const code = document.getElementById('cfCode').value;
+  await processCheckoutCode(code);
+});
+
+const _mode = initMode();
+if(_mode.isSelf){
   initSelfConnection(); // self check-in view needs visitor data loaded too, but stays hidden regardless
+} else if(_mode.isCheckout){
+  initCheckoutConnection(_mode.code);
 } else if(sessionStorage.getItem('adminAuthed') === '1'){
   unlockAdmin();
 } else {
