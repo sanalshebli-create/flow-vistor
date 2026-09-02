@@ -391,7 +391,10 @@
         <div style="text-align:left;font-size:13px;margin:5px 0;color:#222;"><b style="color:#002856;">Check-in:</b> <span id="selfBadgeDate"></span></div>
         <svg id="selfBarcode" style="margin-top:14px;max-width:100%;height:auto;"></svg>
         <div style="margin-top:18px;padding-top:16px;border-top:1px dashed #D8D2C4;">
-          <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Scan this with your phone's camera to check yourself out when you leave</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Your checkout code</div>
+          <div id="selfBadgeCheckoutCode" style="font-size:30px;font-weight:900;color:#002856;letter-spacing:.15em;margin-bottom:8px;"></div>
+          <div style="font-size:12px;color:#B4525C;font-weight:700;margin-bottom:10px;">Please keep this number — you'll need it to check yourself out when you leave</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">or scan this with your phone's camera to check out instantly</div>
           <div id="selfCheckoutQr" style="display:flex;justify-content:center;"></div>
         </div>
       </div>
@@ -408,12 +411,12 @@
     <div class="brand-eyebrow" style="text-align:center">Visitor Check-Out</div>
 
     <div id="checkoutManualScreen">
-      <h1 class="self-title">Enter your badge code to check out</h1>
-      <p style="font-size:13px;color:var(--muted);margin:-6px 0 16px;">This is the code printed under the barcode on your visitor badge.</p>
+      <h1 class="self-title">Enter your 4-digit code to check out</h1>
+      <p style="font-size:13px;color:var(--muted);margin:-6px 0 16px;">This is the short code shown on your visitor badge.</p>
       <form id="checkoutForm">
         <div class="field">
-          <label>Badge Code <span class="req">*</span></label>
-          <input type="text" id="cfCode" required placeholder="e.g. VS1A2B3C4D" autocapitalize="characters">
+          <label>Checkout Code <span class="req">*</span></label>
+          <input type="text" id="cfCode" required inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="e.g. 4821" style="text-align:center;font-size:22px;letter-spacing:.15em;">
         </div>
         <button type="submit" class="btn btn-primary" id="checkoutSubmitBtn" disabled>Connecting…</button>
         <div id="checkoutConnectNote" style="text-align:center;font-size:12px;color:var(--muted);margin-top:8px;">Connecting to the visitor system…</div>
@@ -797,7 +800,8 @@ document.getElementById('visitorForm').addEventListener('submit', async (e)=>{
     status: 'in',
     checkIn: new Date().toISOString(),
     checkOut: null,
-    barcode: generateBarcodeValue()
+    barcode: generateBarcodeValue(),
+    checkoutCode: generateCheckoutCode()
   };
 
   visitors.push(record);
@@ -827,6 +831,12 @@ window.removeVisitor = async function(id){
 
 function generateBarcodeValue(){
   return 'VS' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2,4).toUpperCase();
+}
+
+// A short, easy-to-type code for self checkout - much friendlier than the
+// long barcode string, which is meant to be scanned, not typed.
+function generateCheckoutCode(){
+  return String(Math.floor(1000 + Math.random() * 9000));
 }
 
 const LOGO_DATA_URI = "data:image/png;base64,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";
@@ -868,6 +878,12 @@ window.printBadge = function(id){
         <div class="row"><b>Visiting:</b> ${escapeHtml(v.host||'—')}</div>
         <div class="row"><b>Check-in Date:</b> ${fmtDate(v.checkIn)} - ${fmtTime(v.checkIn)}</div>
         <img class="barcode-img" src="${dataUrl}" alt="barcode">
+        ${v.checkoutCode ? `
+        <div style="margin-top:18px;padding-top:16px;border-top:1px dashed #D8D2C4;">
+          <div style="font-size:11px;color:#6B756F;margin-bottom:6px;">Checkout code</div>
+          <div style="font-size:28px;font-weight:900;color:#002856;letter-spacing:.15em;margin-bottom:8px;">${escapeHtml(v.checkoutCode)}</div>
+          <div style="font-size:12px;color:#B4525C;font-weight:700;">Please keep this number — you'll need it to check yourself out when you leave</div>
+        </div>` : ''}
       </div>
       <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 300); };<\/script>
     </body></html>`);
@@ -889,6 +905,12 @@ function buildBadgeElement(v, barcodeDataUrl){
       <div style="text-align:left;font-size:13px;margin:6px 0;color:#222;"><b style="color:#002856;">Visiting:</b> ${escapeHtml(v.host||'—')}</div>
       <div style="text-align:left;font-size:13px;margin:6px 0;color:#222;"><b style="color:#002856;">Check-in Date:</b> ${fmtDate(v.checkIn)} - ${fmtTime(v.checkIn)}</div>
       <img src="${barcodeDataUrl}" alt="barcode" style="margin-top:16px;max-width:100%;">
+      ${v.checkoutCode ? `
+      <div style="margin-top:14px;padding-top:12px;border-top:1px dashed #D8D2C4;">
+        <div style="font-size:10px;color:#6B756F;margin-bottom:4px;">Checkout code</div>
+        <div style="font-size:24px;font-weight:900;color:#002856;letter-spacing:.15em;margin-bottom:6px;">${escapeHtml(v.checkoutCode)}</div>
+        <div style="font-size:10.5px;color:#B4525C;font-weight:700;">Keep this number — you'll need it to check yourself out</div>
+      </div>` : ''}
     </div>
   `;
   return el;
@@ -1027,6 +1049,7 @@ document.getElementById('selfForm')?.addEventListener('submit', async (e)=>{
     checkIn: new Date().toISOString(),
     checkOut: null,
     barcode: generateBarcodeValue(),
+    checkoutCode: generateCheckoutCode(),
     selfRegistered: true
   };
   visitors.push(record);
@@ -1043,10 +1066,11 @@ document.getElementById('selfForm')?.addEventListener('submit', async (e)=>{
   try{
     JsBarcode('#selfBarcode', record.barcode, {format:"CODE128", width:2.6, height:90, displayValue:true, fontSize:18, fontOptions:"bold", margin:8});
   }catch(err){}
+  document.getElementById('selfBadgeCheckoutCode').textContent = record.checkoutCode;
   const checkoutQrBox = document.getElementById('selfCheckoutQr');
   if(checkoutQrBox && window.QRCode){
     checkoutQrBox.innerHTML = '';
-    const checkoutUrl = PUBLISHED_URL + '?checkout=1&code=' + encodeURIComponent(record.barcode);
+    const checkoutUrl = PUBLISHED_URL + '?checkout=1&code=' + encodeURIComponent(record.checkoutCode);
     new QRCode(checkoutQrBox, {text:checkoutUrl, width:110, height:110, colorDark:"#001B3D", colorLight:"#ffffff", correctLevel: QRCode.CorrectLevel.M});
   }
   e.target.reset();
@@ -1112,9 +1136,12 @@ async function processCheckoutCode(code){
   if(!trimmed) return;
   document.getElementById('checkoutManualScreen').style.display = 'none';
   document.getElementById('checkoutProcessingScreen').style.display = 'block';
-  const v = visitors.find(x => x.barcode && x.barcode.toUpperCase() === trimmed.toUpperCase());
+  const norm = trimmed.toUpperCase();
+  // Prefer the short checkout code (what people actually type); fall back to
+  // matching the long barcode string for older records that predate it.
+  const v = visitors.find(x => (x.checkoutCode && x.checkoutCode.toUpperCase() === norm) || (x.barcode && x.barcode.toUpperCase() === norm));
   if(!v){
-    showCheckoutResult(false, "We couldn't find that badge", 'Please double check the code printed under your barcode, or check out with reception.');
+    showCheckoutResult(false, "We couldn't find that badge", 'Please double check the code on your badge, or check out with reception.');
     return;
   }
   if(v.status === 'out'){
