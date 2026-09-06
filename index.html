@@ -1128,20 +1128,24 @@ async function processCheckoutCode(code){
   if(!trimmed) return;
   document.getElementById('checkoutManualScreen').style.display = 'none';
   document.getElementById('checkoutProcessingScreen').style.display = 'block';
-  const norm = trimmed.toUpperCase();
-  // Prefer the short checkout code (what people actually type); fall back to
-  // matching the long barcode string for older records that predate it.
-  const v = visitors.find(x => (x.checkoutCode && x.checkoutCode.toUpperCase() === norm) || (x.barcode && x.barcode.toUpperCase() === norm));
-  if(!v){
-    showCheckoutResult(false, "We couldn't find that badge", 'Please double check the code on your badge, or check out with reception.');
-    return;
+  try{
+    const norm = trimmed.toUpperCase();
+    // Prefer the short checkout code (what people actually type); fall back to
+    // matching the long barcode string for older records that predate it.
+    const v = visitors.find(x => (x.checkoutCode && String(x.checkoutCode).toUpperCase() === norm) || (x.barcode && String(x.barcode).toUpperCase() === norm));
+    if(!v){
+      showCheckoutResult(false, "We couldn't find that badge", 'Please double check the code on your badge, or check out with reception.');
+      return;
+    }
+    if(v.status === 'out'){
+      showCheckoutResult(true, "You're already checked out", 'Thank you for visiting Flow Medical Solutions!');
+      return;
+    }
+    await checkout(v.id);
+    showCheckoutResult(true, "You're checked out", 'Thank you for visiting Flow Medical Solutions, ' + v.name + '!');
+  }catch(err){
+    showCheckoutResult(false, "Something went wrong", 'Please try again, or check out with reception.');
   }
-  if(v.status === 'out'){
-    showCheckoutResult(true, "You're already checked out", 'Thank you for visiting Flow Medical Solutions!');
-    return;
-  }
-  await checkout(v.id);
-  showCheckoutResult(true, "You're checked out", 'Thank you for visiting Flow Medical Solutions, ' + v.name + '!');
 }
 
 async function initCheckoutConnection(codeFromUrl){
