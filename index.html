@@ -251,16 +251,18 @@
           <label>Department to Visit <span class="req">*</span></label>
           <select id="fDept" required>
             <option value="">Select department</option>
-            <option>APE</option>
-            <option>PM</option>
-            <option>TO</option>
-            <option>MES</option>
-            <option>PE</option>
-            <option>GRC</option>
+            <option>CEO / President's Office</option>
+            <option>Finance</option>
+            <option>Human Resources</option>
+            <option>Project Management</option>
+            <option>Operations</option>
+            <option>IT</option>
             <option>Sales &amp; Marketing</option>
-            <option>CEO</option>
-            <option>CX</option>
-            <option>Shared Services</option>
+            <option>Procurement &amp; Supply Chain</option>
+            <option>Legal &amp; Compliance</option>
+            <option>Administration</option>
+            <option>Assessment</option>
+            <option>Medical Equipment Evaluation</option>
           </select>
         </div>
         <div class="field">
@@ -353,16 +355,18 @@
           <label>Which department are you visiting? <span class="req">*</span></label>
           <select id="sfDept" required>
             <option value="">Select department</option>
-            <option>APE</option>
-            <option>PM</option>
-            <option>TO</option>
-            <option>MES</option>
-            <option>PE</option>
-            <option>GRC</option>
+            <option>CEO / President's Office</option>
+            <option>Finance</option>
+            <option>Human Resources</option>
+            <option>Project Management</option>
+            <option>Operations</option>
+            <option>IT</option>
             <option>Sales &amp; Marketing</option>
-            <option>CEO</option>
-            <option>CX</option>
-            <option>Shared Services</option>
+            <option>Procurement &amp; Supply Chain</option>
+            <option>Legal &amp; Compliance</option>
+            <option>Administration</option>
+            <option>Assessment</option>
+            <option>Medical Equipment Evaluation</option>
           </select>
         </div>
         <div class="field">
@@ -959,16 +963,18 @@ window.shareBadgeWhatsApp = async function(id){
 
       // Fallback: no native file-sharing support (e.g. desktop Chrome) -
       // download the image and point the already-open tab at WhatsApp
-      // with a prefilled text message.
+      // with a prefilled text message. There is no way for a website to
+      // attach a file to a WhatsApp message automatically - that step is
+      // always manual, on every site, by WhatsApp's own design.
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = file.name;
       a.click();
       URL.revokeObjectURL(url);
-      toast('Badge image downloaded - attach it in the WhatsApp chat that opens');
       const waUrl = 'https://wa.me/?text=' + encodeURIComponent(shareText);
       if(waWin){ waWin.location.href = waUrl; } else { window.open(waUrl, '_blank'); }
+      window.alert('The badge image "' + file.name + '" has been downloaded to your Downloads folder.\n\nIn the WhatsApp window that just opened, drag that file into the chat (or click the paperclip/attach icon and choose it) to send it.');
     }, 'image/png');
   }catch(err){
     if(holder.parentNode) document.body.removeChild(holder);
