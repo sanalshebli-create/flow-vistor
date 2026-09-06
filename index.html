@@ -922,12 +922,7 @@ window.shareBadgeWhatsApp = async function(id){
   const v = visitors.find(x=>x.id===id);
   if(!v) return;
 
-  // Open the WhatsApp tab synchronously, right on the click, before any
-  // async image work — most browsers block window.open() once you're a
-  // few "awaits" deep into a click handler, which is why this used to
-  // silently do nothing on some phones/browsers.
   const shareText = `Visitor Badge - ${v.name} - ${v.type}`;
-  const waWin = window.open('', '_blank');
 
   const barcodeCanvas = document.createElement('canvas');
   JsBarcode(barcodeCanvas, v.barcode, {format:"CODE128", displayValue:true, fontSize:16, fontOptions:"bold", width:2.4, height:80, margin:8});
@@ -946,13 +941,13 @@ window.shareBadgeWhatsApp = async function(id){
     canvas.toBlob(async (blob) => {
       if(!blob){
         toast('Could not generate badge image');
-        if(waWin) waWin.close();
         return;
       }
       const file = new File([blob], `visitor-badge-${v.name.replace(/\s+/g,'-')}.png`, {type:'image/png'});
 
+      // On phones this opens the native share sheet so the person can pick
+      // WhatsApp (or any app) directly - no browser tab involved.
       if(navigator.canShare && navigator.canShare({files:[file]})){
-        if(waWin) waWin.close(); // native share sheet replaces the WhatsApp tab
         try{
           await navigator.share({files:[file], title:'Visitor Badge', text:shareText});
           return;
@@ -961,24 +956,21 @@ window.shareBadgeWhatsApp = async function(id){
         }
       }
 
-      // Fallback: no native file-sharing support (e.g. desktop Chrome) -
-      // download the image and point the already-open tab at WhatsApp
-      // with a prefilled text message. There is no way for a website to
-      // attach a file to a WhatsApp message automatically - that step is
-      // always manual, on every site, by WhatsApp's own design.
+      // Fallback for browsers with no native file-sharing support (e.g. desktop
+      // Chrome): just download the badge image, named after the visitor. We
+      // deliberately do not open WhatsApp here - there is no way for a website
+      // to attach a file to a WhatsApp message automatically, so opening a tab
+      // just to show a message would add a step without adding any value.
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = file.name;
       a.click();
       URL.revokeObjectURL(url);
-      const waUrl = 'https://wa.me/?text=' + encodeURIComponent(shareText);
-      if(waWin){ waWin.location.href = waUrl; } else { window.open(waUrl, '_blank'); }
-      window.alert('The badge image "' + file.name + '" has been downloaded to your Downloads folder.\n\nIn the WhatsApp window that just opened, drag that file into the chat (or click the paperclip/attach icon and choose it) to send it.');
+      toast('Badge image saved as "' + file.name + '"');
     }, 'image/png');
   }catch(err){
     if(holder.parentNode) document.body.removeChild(holder);
-    if(waWin) waWin.close();
     toast('Could not create badge image for sharing');
   }
 };
